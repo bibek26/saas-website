@@ -10,6 +10,16 @@
 {% block content %}
 <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
 <div class="dashboard-container">
+    {% if messages %}
+    <div class="messages">
+        {% for message in messages %}
+        <div class="message {% if message.tags %}{{ message.tags }}{% endif %}">
+            {{ message }}
+            <span class="close-message" onclick="$(this).parent().hide();">&times;</span>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
     <!-- Top Metrics Row -->
     <div class="metrics-grid">
         <div class="metric-card">
@@ -143,6 +153,13 @@
                     </li>
                     {% endfor %}
                 </ul>
+            </div>
+
+            <div class="dashboard-card">
+                <div class="card-header">
+                    <h2 class="card-title">Calendar</h2>
+                </div>
+                <div id="calendar" class="compact-calendar"></div>
             </div>
         </div>
 
@@ -300,6 +317,32 @@
 </div>
 
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js'></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        var calendarEl = document.getElementById('calendar');
+        var calendar = new FullCalendar.Calendar(calendarEl, {
+            initialView: 'dayGridMonth',
+            height: 300, // Match CSS height
+            contentHeight: 230, // Slightly less to account for header
+            aspectRatio: 1.5, // Slightly wider to fit compactly
+            headerToolbar: {
+                left: 'prev',
+                center: 'title',
+                right: 'next'
+            },
+            events: [
+                {% for task in tasks %}
+                { title: '{{ task.title|truncatechars:15 }}', start: '{{ task.due_date|date:"Y-m-d" }}' },
+                {% endfor %}
+                {% for project in projects %}
+                { title: '{{ project.name|truncatechars:15 }} Deadline', start: '{{ project.deadline|date:"Y-m-d" }}', color: '#ff0000' },
+                {% endfor %}
+            ]
+        });
+        calendar.render();
+    });
+</script>
 <script>
     $(document).ready(function() {
         $('.show-status-dropdown').click(function(e) {
@@ -740,6 +783,25 @@
         .empty p {
             margin: 0;
             text-align: center;
+        }
+
+        .dashboard-card .compact-calendar {
+            height: 300px; /* Reduced height for a smaller calendar */
+            font-size: 0.8em; /* Smaller base font size */
+        }
+        .compact-calendar .fc-daygrid-day-number {
+            font-size: 0.9em; /* Smaller day numbers */
+        }
+        .compact-calendar .fc-event {
+            font-size: 0.7em; /* Smaller event text */
+            padding: 1px 2px; /* Reduced padding for events */
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 100%; /* Prevent overflow */
+        }
+        .compact-calendar .fc-daygrid-day {
+            height: 30px; /* Reduce day cell height */
         }
         </style>
         <script>

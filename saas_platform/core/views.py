@@ -11,7 +11,7 @@ from dateutil.relativedelta import relativedelta
 from django.contrib.auth.hashers import make_password
 from django.contrib.auth import update_session_auth_hash
 from django.views.decorators.http import require_POST
-from django.db.models import Q
+from django.db.models import Q, Count
 from django.db import models
 from django.http import HttpResponse, JsonResponse
 from django.core.paginator import Paginator
@@ -78,13 +78,30 @@ def tenant_home(request):
             context['customization'] = customization
         with schema_context(request.user.tenant_schema):
             notifications = Notification.objects.filter(user=request.user, is_read=False)
-            activities = ActivityLog.objects.order_by('-timestamp')[:10]
-            tasks = Task.objects.all().order_by('-id')
+            activities = ActivityLog.objects.order_by('-timestamp')[:6]
+            tasks = Task.objects.all().prefetch_related('attachments').order_by('-id')
             # Pagination for tasks
             paginator = Paginator(tasks, 10)  # 10 tasks per page
             page_number = request.GET.get('page')  # Get the page number from query params
             page_obj = paginator.get_page(page_number)
             
+            projects = Project.objects.filter(members=request.user).prefetch_related('members')
+            projects_paginator = Paginator(projects, 10)
+            projects_page_number = request.GET.get('projects_page')
+            projects_page_obj = projects_paginator.get_page(projects_page_number)
+            metrics = {
+                'total_tasks': Task.objects.count(),
+                'completed_tasks': Task.objects.filter(status='Completed').count(),
+                'overdue_tasks': Task.objects.filter(due_date__lt=timezone.now()).exclude(status='Completed').count(),
+                'active_projects': Project.objects.filter(deadline__gte=timezone.now()).count(),
+            }
+            workload = CustomUser.objects.exclude(role='admin').annotate(
+                task_count=Count('task'), 
+                overdue_count=Count('task', filter=Q(task__due_date__lt=timezone.now()) & ~Q(task__status='Completed'))
+            )
+            context['workload'] = workload
+            context['metrics'] = metrics
+            context['projects_page_obj'] = projects_page_obj
             context['page_obj'] = page_obj
             context['notifications'] = notifications
             context['activities'] = activities
@@ -93,7 +110,7 @@ def tenant_home(request):
     else:
         tasks = Task.objects.filter(assigned_to=request.user).order_by(request.GET.get('sort', 'due_date'))
         projects = Project.objects.filter(members=request.user)
-        activities = Activity.objects.filter(project__members=request.user).order_by('-timestamp')[:10]
+        activities = Activity.objects.filter(project__members=request.user).order_by('-timestamp')[:6]
         notifications = Notification.objects.filter(user=request.user, is_read=False)
         metrics = {
             'tasks_completed': Task.objects.filter(assigned_to=request.user, status='Completed').count(),
@@ -107,6 +124,7 @@ def tenant_home(request):
             'notifications': notifications, 'metrics': metrics, 'todo_list': todo_list, 
             'leave_balance': profile.leave_balance
         })
+        
 
 @login_required
 def home(request):
@@ -328,7 +346,7 @@ def user_management(request):
     if request.user.role != 'admin':
         return redirect('core:tenant_home')
     with schema_context(request.user.tenant_schema):
-        users = CustomUser.objects.all()
+        users = CustomUser.objects.exclude(role='admin')
     return render(request, 'core/user_management.html', {'users': users})
 
 @login_required
@@ -382,6 +400,7 @@ def deactivate_user(request, user_id):
         user = get_object_or_404(CustomUser, id=user_id)
         user.is_active = False
         user.save()
+        ActivityLog.objects.create(action=f"User {user.username} was deactivated")
     return redirect('core:user_management')
 
 @login_required
@@ -394,7 +413,7 @@ def activate_user(request, user_id):
         user.is_active = True
         user.save()
         messages.success(request, f'User {user.username} activated.')
-        ActivityLog.objects.create(tenant=Tenant.objects.get(schema_name=request.user.tenant_schema), action=f"User {user.username} was activated")
+        ActivityLog.objects.create(action=f"User {user.username} was activated")
     return redirect('core:user_management')
 
 @login_required
@@ -816,6 +835,8 @@ def create_project(request):
         if form.is_valid():
             project = form.save()
             messages.success(request, f"Project '{project.name}' created successfully.")
+            ActivityLog.objects.create(action=f"New Project '{project.name}' was created.")
+            
             return redirect('core:user_management')  # Or a project management page
     else:
         form = ProjectForm()

@@ -27,8 +27,9 @@
     .dashboard-card {
         background: white;
         border-radius: 12px;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-        padding: 1.5rem;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+        padding: 1.6rem;
+        margin-top:1.5rem;
         transition: transform 0.2s ease, box-shadow 0.2s ease;
     }
     
@@ -295,6 +296,43 @@
         padding: 20px;
         color: #888;
     }
+
+    /*adding new styles for metrics and workload */
+    .metrics-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 1rem;
+        padding: 1rem 0;
+    }
+    
+    .metric-item {
+        background: #f8fafc;
+        border-radius: 8px;
+        padding: 1rem;
+        text-align: center;
+    }
+    
+    .metric-value {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: var(--primary-color);
+    }
+    
+    .metric-label {
+        font-size: 0.9rem;
+        color: #64748b;
+    }
+    
+    .workload-container {
+        max-height: 300px; /* Fixed height for scrolling */
+        overflow-y: auto;
+        -ms-overflow-style: none; /* Hide scrollbar in IE and Edge */
+        scrollbar-width: none; /* Hide scrollbar in Firefox */
+    }
+    
+    .workload-container::-webkit-scrollbar {
+        display: none;
+    }
 </style>
 {% endblock %}
 
@@ -353,7 +391,6 @@
             </div>
         </div>
     </div>
-
 
     <div class="dashboard-grid">
         <!-- User Details Card -->
@@ -428,6 +465,63 @@
         </div>
     </div>
 
+    <!-- New Dashboard Metrics Card -->
+    <div class="dashboard-card">
+        <div class="card-header">
+            <h2 class="card-title">Dashboard Metrics</h2>
+        </div>
+        <div class="metrics-grid">
+            <div class="metric-item">
+                <div class="metric-value">{{ metrics.total_tasks }}</div>
+                <div class="metric-label">Total Tasks</div>
+            </div>
+            <div class="metric-item">
+                <div class="metric-value">{{ metrics.completed_tasks }}</div>
+                <div class="metric-label">Completed Tasks</div>
+            </div>
+            <div class="metric-item">
+                <div class="metric-value">{{ metrics.overdue_tasks }}</div>
+                <div class="metric-label">Overdue Tasks</div>
+            </div>
+            <div class="metric-item">
+                <div class="metric-value">{{ metrics.active_projects }}</div>
+                <div class="metric-label">Active Projects</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- New Team Workload Overview Card -->
+    <div class="dashboard-card">
+        <div class="card-header">
+            <h2 class="card-title">Team Workload Overview</h2>
+        </div>
+        <div class="workload-container">
+            {% if workload %}
+            <table class="compact-table">
+                <thead>
+                    <tr>
+                        <th>User</th>
+                        <th>Total Tasks</th>
+                        <th>Overdue Tasks</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for user in workload %}
+                    <tr>
+                        <td>{{ user.username }}</td>
+                        <td>{{ user.task_count }}</td>
+                        <td>{{ user.overdue_count }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div class="empty-state">No workload data available</div>
+            {% endif %}
+        </div>
+    </div>
+
+
     <div class="dashboard-card tasks-wrapper">
         <div class="card-header">
             <h2 class="card-title">Assigned Tasks</h2>
@@ -456,10 +550,13 @@
                         <td>{{ task.status }}</td>
                         <td class="comments-cell">{{ task.comments|default:"No comments" }}</td>
                         <td class="attachments-cell">
-                            {% if task.attachments %}
-                                <a href="{{ task.attachments.url }}" download="{{ task.attachments.name }}" class="attachment-link">
-                                    <i class="fas fa-paperclip"></i> {{ task.attachments.name|cut:"task_attachments/" }}
+                            {% if task.attachments.exists %}
+                            {% for attachment in task.attachments.all %}
+                                <a href="{{ attachment.file.url }}" download="{{ attachment.file.name }}" class="attachment-link">
+                                    <i class="fas fa-paperclip"></i> {{ attachment.file.name|cut:"task_attachments/" }}
                                 </a>
+                                {% if not forloop.last %}<br>{% endif %}
+                            {% endfor %}
                             {% else %}
                                 No attachments
                             {% endif %}
@@ -488,9 +585,67 @@
             </span>
         </div>
         {% else %}
-        <div class="empty-state">No tasks assigned</div>
+            <div class="empty-state">No tasks assigned</div>
         {% endif %}
     </div>
+    </div>
+
+    <!-- New Projects Table -->
+    <div class="dashboard-card projects-wrapper">
+        <div class="card-header">
+            <h2 class="card-title">Projects</h2>
+        </div>
+        <div class="card-body">
+            {% if projects_page_obj %}
+            <table class="compact-table">
+                <thead>
+                    <tr>
+                        <th>Project Name</th>
+                        <th>Members</th>
+                        <th>Due Date</th>
+                        <th>Progress</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for project in projects_page_obj %}
+                    <tr>
+                        <td>{{ project.name }}</td>
+                        <td>
+                            {% for member in project.members.all %}
+                                {{ member.username }}{% if not forloop.last %}, {% endif %}
+                            {% endfor %}
+                        </td>
+                        <td>{{ project.deadline|date:"M d, Y" }}</td>
+                        <td>
+                            <div style="width: 100px; background: #e0e0e0; border-radius: 5px;">
+                                <div style="width: {{ project.completion_percentage }}%; background: #28a745; height: 10px; border-radius: 5px;"></div>
+                            </div>
+                            {{ project.completion_percentage }}%
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            <!-- Pagination Controls for Projects -->
+            <div class="pagination">
+                <span class="step-links">
+                    {% if projects_page_obj.has_previous %}
+                        <a href="?page={{ tasks_page_obj.number }}&projects_page=1" class="btn-custom">&laquo; First</a>
+                        <a href="?page={{ tasks_page_obj.number }}&projects_page={{ projects_page_obj.previous_page_number }}" class="btn-custom">Previous</a>
+                    {% endif %}
+                    <span class="current">
+                        Page {{ projects_page_obj.number }} of {{ projects_page_obj.paginator.num_pages }}
+                    </span>
+                    {% if projects_page_obj.has_next %}
+                        <a href="?page={{ tasks_page_obj.number }}&projects_page={{ projects_page_obj.next_page_number }}" class="btn-custom">Next</a>
+                        <a href="?page={{ tasks_page_obj.number }}&projects_page={{ projects_page_obj.paginator.num_pages }}" class="btn-custom">Last &raquo;</a>
+                    {% endif %}
+                </span>
+            </div>
+            {% else %}
+            <div class="empty-state">No projects available</div>
+            {% endif %}
+        </div>
     </div>
 
 </div>

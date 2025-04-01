@@ -78,27 +78,3 @@
     </form>
     <a href="{% url 'core:change_password' %}">Change Password</a>
 {% endblock %}
-
-{% comment %} <!-- templates/core/tenant_profile_edit.html -->
-{% extends 'core/base.html' %}
-{% load static %}
-
-{% block title %}Edit Tenant Profile{% endblock %}
-
-{% block content %}
-    <h1 class="mb-4">Edit Profile & Logo</h1>
-    <form method="post" enctype="multipart/form-data">
-        {% csrf_token %}
-        <div class="mb-3">
-            {{ user_form.as_p }}
-        </div>
-        <div class="mb-3">
-            <h4>Tenant Details</h4>
-            {{ tenant_form.as_p }}
-        </div>
-        <button type="submit" class="btn btn-custom">Save Changes</button>
-        <a href="{% url 'core:tenant_home' %}" class="btn btn-secondary ms-2">Cancel</a>
-    </form>
-{% endblock %} {% endcomment %}
-
-<!-- templates/core/tenant_profile_edit.html -->

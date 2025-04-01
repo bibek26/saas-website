@@ -5,7 +5,7 @@
     --text-color: #1e293b;
     --card-bg: #ffffff;
     --border-radius: 0.75rem;
-    --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    --shadow: 0 4px 12px -1px rgba(0, 0, 0, 0.5);
     --transition: all 0.2s ease;
 }
 
