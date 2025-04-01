@@ -1,0 +1,14 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Edit User{% endblock %}
+
+{% block content %}
+    <h1 class="mb-4">Edit User: {{ user.username }}</h1>
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit" class="btn btn-custom">Save Changes</button>
+        <a href="{% url 'core:user_management' %}" class="btn btn-secondary">Cancel</a>
+    </form>
+{% endblock %}

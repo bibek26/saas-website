@@ -1,0 +1,853 @@
+{% extends 'core/base.html' %}
+{% load notification_filters %}
+{% load static widget_tweaks %}
+
+{% block title %}Dashboard{% endblock %}
+{% block extra_css %}
+<link href="{% static 'css/dashboard.css' %}" rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+<input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
+<div class="dashboard-container">
+    <!-- Top Metrics Row -->
+    <div class="metrics-grid">
+        <div class="metric-card">
+            <div class="metric-icon">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <div class="metric-content">
+                <h3>Tasks Completed</h3>
+                <p class="metric-value">{{ metrics.tasks_completed }}</p>
+            </div>
+        </div>
+        
+        <div class="metric-card">
+            <div class="metric-icon">
+                <i class="fas fa-project-diagram"></i>
+            </div>
+            <div class="metric-content">
+                <h3>Projects in Progress</h3>
+                <p class="metric-value">{{ metrics.projects_in_progress }}</p>
+            </div>
+        </div>
+        
+        <div class="metric-card">
+            <div class="metric-icon">
+                <i class="fas fa-calendar-alt"></i>
+            </div>
+            <div class="metric-content">
+                <h3>Upcoming Deadlines</h3>
+                <p class="metric-value">{{ metrics.upcoming_deadlines }}</p>
+            </div>
+        </div>
+        
+        <div class="metric-card">
+            <div class="metric-icon">
+                <i class="fas fa-umbrella-beach"></i>
+            </div>
+            <div class="metric-content">
+                <h3>Leave Balance</h3>
+                <p class="metric-value">{{ leave_balance }} days</p>
+                <a href="{% url 'core:request_leave' %}" class="btn-small">Request</a>
+            </div>
+        </div>
+
+        <!-- Chat Button -->
+        <div class="metric-card chat-button-card">
+            <div class="metric-icon">
+                <i class="fas fa-comments"></i>
+            </div>
+            <div class="metric-content">
+                <h3>Chat</h3>
+                <button id="open-chat-btn" class="btn-small">Open Chat</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content Columns -->
+    <div class="dashboard-columns">
+        <!-- Left Column -->
+        <div class="dashboard-column">
+            {% comment %} <!-- Notifications -->
+            <div class="dashboard-card">
+                <div class="card-header">
+                    <h3>Notifications</h3>
+                    <span class="badge">{{ notifications|length }}</span>
+                </div>
+                <ul class="notification-list">
+                    {% for notification in notifications %}
+                    <li class="notification-item">
+                        <div class="notification-content">
+                            <p>{{ notification.message }}</p>
+                            <small>{{ notification.timestamp|timesince }} ago</small>
+                        </div>
+                        <span class="notification-dot"></span>
+                    </li>
+                    {% empty %}
+                    <li class="notification-item empty">
+                        <p>No new notifications</p>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div> {% endcomment %}
+
+            <div class="dashboard-card">
+                <div class="card-header">
+                    <h3>
+                        Notifications
+                        <span class="toggle-arrow" onclick="toggleNotifications(this)">
+                            <i class="fas fa-chevron-down"></i>
+                        </span>
+                    </h3>
+                    <span class="badge" id="notification-count">{{ notifications|length }}</span>
+                    <button class="mark-all-read" onclick="markAllRead()">Mark All Read</button>
+                </div>
+                <div class="notification-container" style="display: none;">
+                    <ul class="notification-list" id="notification-list">
+                        {% for notification in notifications %}
+                        <li class="notification-item" data-notification-id="{{ notification.id }}" onclick="markAsRead(this)">
+                            <div class="notification-content">
+                                <p>{{ notification.message }}</p>
+                                <small>{{ notification.timestamp|timesince }} ago</small>
+                            </div>
+                            <span class="notification-dot"></span>
+                        </li>
+                        {% empty %}
+                        <li class="notification-item empty">
+                            <p>No new notifications</p>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Today's To-Do -->
+            <div class="dashboard-card">
+                <div class="card-header">
+                    <h3>Today's To-Do</h3>
+                </div>
+                <ul class="todo-list">
+                    {% for task in todo_list %}
+                    <li class="todo-item">
+                        <label class="todo-checkbox">
+                            <input type="checkbox">
+                            <span class="checkmark"></span>
+                        </label>
+                        <span class="todo-title">{{ task.title }}</span>
+                        <span class="todo-due">Due Today</span>
+                    </li>
+                    {% empty %}
+                    <li class="todo-item empty">
+                        <p>No tasks due today</p>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+
+        <!-- Right Column -->
+        <div class="dashboard-column">
+            <!-- Tasks -->
+            <div class="dashboard-card">
+                <div class="card-header">
+                    <h3>Your Tasks</h3>
+                    <div class="sort-options">
+                        <a href="?sort=priority" class="sort-link">Priority</a>
+                        <a href="?sort=due_date" class="sort-link">Due Date</a>
+                        <a href="?sort=project" class="sort-link">Project</a>
+                    </div>
+                </div>
+                <div class="table-responsive">
+                    <table class="task-table">
+                        <thead>
+                            <tr>
+                                <th>Title</th>
+                                <th>Priority</th>
+                                <th>Due Date</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for task in tasks %}
+                            <tr>
+                                <td>{{ task.title }}</td>
+                                <td><span class="priority-badge priority-{{ task.priority|lower }}">{{ task.priority }}</span></td>
+                                <td>{{ task.due_date|date:"M d, Y" }}</td>
+                                
+                                <td>
+                                    <span class="status-badge status-{{ task.status|lower }}" id="status-{{ task.id }}">{{ task.status }}</span>
+                                    <!-- <a href="{% url 'core:update_task_status' task.id %}" class="btn-icon" title="Update Status">
+                                        <i class="fas fa-sync-alt"></i>
+                                    </a> -->
+                                    <div class="status-update-container">
+                                        <button class="btn-icon show-status-dropdown" title="Update Status" data-task-id="{{ task.id }}">
+                                            <i class="fas fa-sync-alt"></i>
+                                        </button>
+                                        <div class="status-dropdown" id="status-dropdown-{{ task.id }}" style="display: none;">
+                                            <select class="status-select" data-task-id="{{ task.id }}">
+                                                {% for choice in task.get_status_choices %}
+                                                <option value="{{ choice.0 }}" {% if task.status == choice.0 %}selected{% endif %}>{{ choice.1 }}</option>
+                                                {% endfor %}
+                                            </select>
+                                            <div class="dropdown-arrow"></div>
+                                        </div>
+                                    </div>
+                                </td>
+                                
+                                <td class="task-actions">
+                                    <a href="{% url 'core:update_task_progress' task.id %}" class="btn-icon" title="Add Comment">
+                                        <i class="fas fa-comment"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="6" class="empty-table">No tasks assigned</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Projects -->
+            <div class="dashboard-card">
+                <div class="card-header">
+                    <h3>Your Projects</h3>
+                </div>
+                <div class="project-slider">
+                    <div class="project-grid" id="project-grid">
+                        {% for project in projects %}
+                        <div class="project-card">
+                            <h4>{{ project.name }}</h4>
+                            <div class="project-meta">
+                                <span><i class="fas fa-calendar"></i> Deadline: {{ project.deadline|date:"M d, Y" }}</span>
+                            </div>
+                            <div class="project-progress">
+                                <div class="progress-bar" style="width: {{ project.completion }}%; background-color: #007bff;"></div>
+                                <span>{{ project.completion_percentage|floatformat:0 }}% Complete</span>
+                            </div>
+
+                            <div class="project-tasks">
+                                <h5>
+                                    Tasks:
+                                    <span class="toggle-arrow" onclick="toggleTasks(this)">
+                                        <i class="fas fa-chevron-down"></i>
+                                    </span>
+                                </h5>
+                                <div class="task-container" style="display: none;">
+                                    {% with project_tasks=project.task_set.all|dictsortreversed:"id" %}
+                                    {% if project_tasks %}
+                                    <ul class="task-list">
+                                        {% for task in project_tasks %}
+                                        {% if task.assigned_to == request.user %}
+                                        <li>
+                                            <span>{{ task.title }}</span> - 
+                                            <span>{{ task.due_date|date:"M d, Y" }}</span> - 
+                                            <span>{{ task.progress_percentage }}%</span>
+                                            <a href="{% url 'core:update_task_progress' task.id %}" class="btn-icon" title="Update Progress">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                        </li>
+                                        {% endif %}
+                                        {% endfor %}
+                                    </ul>
+                                    {% else %}
+                                    <p>No tasks assigned</p>
+                                    {% endif %}
+                                    {% endwith %}
+                                </div>
+                            </div>
+
+                        </div>
+                        {% empty %}
+                        <div class="empty-projects">
+                            <p>No active projects</p>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Chat Users Modal -->
+<div id="chat-users-modal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <span class="close-modal" onclick="$('#chat-users-modal').hide();">×</span>
+        <h3 class="modal-title">Chat with Users</h3>
+        <div id="chat-users-container"></div>
+    </div>
+</div>
+
+<!-- Chat Messages Modal -->
+<div id="chat-messages-modal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <span class="close-modal" onclick="$('#chat-messages-modal').hide();">×</span>
+        <h3 id="chat-modal-title" class="modal-title"></h3>
+        <div id="chat-messages-container" class="message-list-container"></div>
+        <form id="chat-message-form" class="message-form" method="post">
+            {% csrf_token %}
+            <div class="message-input-group">
+                <input type="text" id="chat-message-input" name="content" class="form-control" placeholder="Type a message..." required>
+                <button type="submit" class="btn btn-custom">Send</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+    $(document).ready(function() {
+        $('.show-status-dropdown').click(function(e) {
+            e.preventDefault();
+            const taskId = $(this).data('task-id');
+            $('#status-dropdown-' + taskId).toggle();
+        });
+    
+        $('.status-select').change(function() {
+            const taskId = $(this).data('task-id');
+            const newStatus = $(this).val();
+            
+            $.ajax({
+                url: `/update-task-status/${taskId}/`,
+                method: 'POST',
+                data: {
+                    'status': newStatus,
+                    'csrfmiddlewaretoken': $('input[name=csrfmiddlewaretoken]').val()
+                },
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                success: function(response) {
+                    if (response.success) {
+                        const statusBadge = $(`#status-${taskId}`);
+                        statusBadge.text(response.status);
+                        statusBadge.removeClass().addClass('status-badge status-' + response.status.toLowerCase());
+                        $(`#status-dropdown-${taskId}`).hide();
+                    }
+                },
+                error: function(xhr) {
+                    alert('Failed to update status. Please try again. Status: ' + xhr.status);
+                }
+            });
+        });
+
+        // Open chat users modal
+        $('#open-chat-btn').click(function(e) {
+            e.preventDefault();
+            const modal = $('#chat-users-modal');
+            const usersContainer = $('#chat-users-container');
+
+            $.ajax({
+                url: "{% url 'core:get_chat_users' %}",
+                method: 'GET',
+                headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                success: function(response) {
+                    usersContainer.html(response.users_html);
+                    modal.show();
+                },
+                error: function(xhr) {
+                    console.log('Error:', xhr.status, xhr.responseText);
+                    alert('Failed to load users: ' + xhr.status);
+                }
+            });
+        });
+
+        // Open chat messages modal when clicking a user
+        $(document).on('click', '.chat-user', function() {
+            const userId = $(this).data('user-id');
+            const userName = $(this).find('.user-name').text();
+            const messagesModal = $('#chat-messages-modal');
+            const messagesContainer = $('#chat-messages-container');
+
+            $('#chat-modal-title').text(`Chat with ${userName}`);
+            $('#chat-message-form').data('user-id', userId);
+            $('#chat-users-modal').hide(); // Hide users modal
+
+            $.ajax({
+                url: "{% url 'core:view_user_messages' 999 %}".replace('999', userId),
+                method: 'GET',
+                headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                success: function(response) {
+                    messagesContainer.html(response.messages_html);
+                    messagesModal.show();
+                    messagesContainer.scrollTop(messagesContainer[0].scrollHeight); // Scroll to bottom
+                },
+                error: function(xhr) {
+                    console.log('Error:', xhr.status, xhr.responseText);
+                    alert('Failed to load messages: ' + xhr.status);
+                }
+            });
+        });
+
+        // Send chat message
+        $('#chat-message-form').submit(function(e) {
+            e.preventDefault();
+            const userId = $(this).data('user-id');
+            const formData = $(this).serialize();
+            const csrfToken = $('input[name=csrfmiddlewaretoken]').val();
+        
+            $.ajax({
+                url: "{% url 'core:view_user_messages' 999 %}".replace('999', userId),
+                method: 'POST',
+                data: formData + '&csrfmiddlewaretoken=' + csrfToken,
+                headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                success: function(response) {
+                    console.log('Success response:', response);
+                    if (response.success) {
+                        const $container = $('#chat-messages-container');
+                               
+                        // Append the new message
+                        $container.append(response.new_messages_html);
+                        $('#chat-message-input').val('');
+                       // $container.scrollTop($container[0].scrollHeight);
+                       setTimeout(() => {
+                            $container.scrollTop($container[0].scrollHeight);
+                        }, 0);
+                    } else {
+                        console.log('Error response:', response);
+                        alert('Failed to send message: ' + (response.errors ? JSON.stringify(response.errors) : 'Unknown error'));
+                    }
+                },
+                error: function(xhr) {
+                    console.log('AJAX Error:', xhr.status, xhr.statusText, xhr.responseText);
+                    alert('Failed to send message: ' + xhr.status + ' - ' + xhr.statusText);
+                }
+            });
+        });
+    
+        // Ensure initial load scrolls to bottom
+        $(document).on('click', '.chat-user', function() {
+            const userId = $(this).data('user-id');
+            const userName = $(this).find('.user-name').text();
+            const messagesModal = $('#chat-messages-modal');
+            const messagesContainer = $('#chat-messages-container');
+
+            $('#chat-modal-title').text(`Chat with ${userName}`);
+            $('#chat-message-form').data('user-id', userId);
+            $('#chat-users-modal').hide();
+
+            $.ajax({
+                url: "{% url 'core:view_user_messages' 999 %}".replace('999', userId),
+                method: 'GET',
+                headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                success: function(response) {
+                    messagesContainer.html(response.messages_html);
+                    messagesModal.show();
+                    messagesContainer[0].scrollTop = messagesContainer[0].scrollHeight; // Initial scroll to bottom
+                },
+                error: function(xhr) {
+                    console.log('Error:', xhr.status, xhr.responseText);
+                    alert('Failed to load messages: ' + xhr.status);
+                }
+            });
+        });
+
+        // Fetch new messages periodically
+        let lastMessageId = 0;
+        function fetchNewMessages() {
+            const userId = $('#chat-message-form').data('user-id');
+            if (!userId) return;
+
+            $.ajax({
+                url: "{% url 'core:view_user_messages' 999 %}".replace('999', userId) + '?last_message_id=' + lastMessageId,
+                method: 'GET',
+                headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                success: function(response) {
+                    if (response.new_messages_html) {
+                        const $container = $('#chat-messages-container');
+                        $container.append(response.new_messages_html);
+                        lastMessageId = response.latest_message_id || lastMessageId;
+                        $container.scrollTop($container[0].scrollHeight);
+                    }
+                },
+                error: function(xhr) {
+                    console.log('Error fetching new messages:', xhr.status, xhr.responseText);
+                }
+            });
+        }
+
+        setInterval(() => {
+            if ($('#chat-messages-modal').is(':visible')) {
+                fetchNewMessages();
+            }
+        }, 5000);
+
+        // Update initial load to set lastMessageId
+        $(document).on('click', '.chat-user', function() {
+            const userId = $(this).data('user-id');
+            const userName = $(this).find('.user-name').text();
+            const messagesModal = $('#chat-messages-modal');
+            const messagesContainer = $('#chat-messages-container');
+
+            $('#chat-modal-title').text(`Chat with ${userName}`);
+            $('#chat-message-form').data('user-id', userId);
+            $('#chat-users-modal').hide();
+
+            $.ajax({
+                url: "{% url 'core:view_user_messages' 999 %}".replace('999', userId),
+                method: 'GET',
+                headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                success: function(response) {
+                    messagesContainer.html(response.messages_html);
+                    lastMessageId = response.latest_message_id || 0; // Set initial last ID
+                    messagesModal.show();
+                    messagesContainer.scrollTop(messagesContainer[0].scrollHeight);
+                },
+                error: function(xhr) {
+                    console.log('Error:', xhr.status, xhr.responseText);
+                    alert('Failed to load messages: ' + xhr.status);
+                }
+            });
+        });
+
+        // Close modals on outside click
+        $(document).click(function(e) {
+            if (!$(e.target).closest('.modal-content, #open-chat-btn, .chat-user, .status-update-container').length) {
+                $('#chat-users-modal').hide();
+                $('#chat-messages-modal').hide();
+                $('.status-dropdown').hide();
+            }
+        });
+    });
+    </script>
+
+    <style>
+        .project-slider {
+            position: relative;
+            overflow: hidden;
+            width: 100%;
+        }
+        
+        .empty-projects {
+            width: 100%;
+            text-align: center;
+            padding: 20px;
+        }
+        .slider-arrow {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px;
+            cursor: pointer;
+            border-radius: 50%;
+            font-size: 1.2em;
+        }
+        .slider-arrow.next {
+            right: 10px;
+        }
+        .slider-arrow.prev {
+            left: 10px;
+        }
+        .slider-arrow:hover {
+            background: #0056b3;
+        }
+        /* Existing styles from dashboard.css assumed */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+        .metric-card {
+            background: #fff;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 15px;
+            display: flex;
+            align-items: center;
+        }
+        .chat-button-card {
+            cursor: pointer;
+        }
+        .btn-small {
+            padding: 5px 10px;
+            background-color: #007bff;
+            color: white;
+            border-radius: 3px;
+            text-decoration: none;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: rgba(0,0,0,0.5);
+        }
+        .modal-content {
+            background-color: #fff;
+            margin: 10% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+            max-width: 600px;
+            border-radius: 5px;
+            position: relative;
+            overflow: hidden;
+        }
+        .close-modal {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            font-size: 24px;
+            cursor: pointer;
+            color: #333;
+        }
+        .modal-title {
+            font-size: 24px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .message-list-container {
+            max-height: 400px;
+            overflow-y: auto;
+            margin-bottom: 20px;
+        }
+        .message-form {
+            display: flex;
+            align-items: center;
+        }
+        .message-input-group {
+            display: flex;
+            width: 100%;
+        }
+        .form-control {
+            flex: 1;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px 0 0 4px;
+            margin-right: -1px;
+        }
+        .message-form .btn-custom {
+            border-radius: 0 4px 4px 0;
+            padding: 8px 15px;
+            background-color: #007bff;
+            color: white;
+        }
+        #chat-messages-container {
+            max-height: 400px; /* Set a height that fits your design */
+            overflow-y: auto;  /* Enables vertical scrolling */
+            padding: 10px;     /* Optional: for spacing */
+        }
+        .project-tasks {
+            margin-top: 10px;
+        }
+        .project-tasks h5 {
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .toggle-arrow {
+            margin-left:10px;
+            transition: transform 0.3s ease;
+        }
+        .task-container {
+            margin-top: 10px;
+        }
+        .task-list {
+            list-style: none;
+            padding: 0;
+        }
+        .task-list li {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 5px 0;
+            border-bottom: 1px solid #eee;
+        }
+        .btn-icon {
+            color: #007bff;
+            text-decoration: none;
+        }
+        .btn-icon:hover {
+            color: #0056b3;
+        }
+
+        .dashboard-card .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .card-header h3 {
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            margin: 0;
+        }
+        .badge {
+            background-color: #007bff;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.9em;
+            margin-left: 10px;
+        }
+        .badge.hidden {
+            display: none;
+        }
+        .mark-all-read {
+            background-color: #28a745;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.9em;
+        }
+        .mark-all-read:hover {
+            background-color: #218838;
+        }
+        .notification-container {
+            margin-top: 10px;
+        }
+        .notification-list {
+            list-style: none;
+            padding: 0;
+            max-height: 120px; /* Approx height for 3 notifications */
+            overflow-y: auto;  /* Scroll if more than 3 */
+        }
+        .notification-item {
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+        }
+        .notification-item:hover {
+            background-color: #f5f5f5;
+        }
+        .notification-dot {
+            width: 10px;
+            height: 10px;
+            background-color: #007bff;
+            border-radius: 50%;
+        }
+        .empty p {
+            margin: 0;
+            text-align: center;
+        }
+        </style>
+        <script>
+            const csrfToken = '{{ csrf_token }}';  // Ensure CSRF token is available
+        
+            function toggleNotifications(element) {
+                const container = element.parentElement.parentElement.nextElementSibling;
+                const icon = element.querySelector('i');
+                if (container.style.display === 'none' || container.style.display === '') {
+                    container.style.display = 'block';
+                    icon.classList.remove('fa-chevron-down');
+                    icon.classList.add('fa-chevron-up');
+                } else {
+                    container.style.display = 'none';
+                    icon.classList.remove('fa-chevron-up');
+                    icon.classList.add('fa-chevron-down');
+                }
+            }
+        
+            function markAsRead(element) {
+                const notificationId = element.getAttribute('data-notification-id');
+                fetch("{% url 'core:mark_notification_read' %}", {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'X-CSRFToken': csrfToken
+                    },
+                    body: `notification_id=${notificationId}`
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        element.remove();
+                        updateNotificationCount(-1);
+                    } else {
+                        console.error('Failed to mark notification as read:', data.error);
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+            }
+        
+            function markAllRead() {
+                fetch("{% url 'core:mark_all_notifications_read' %}", {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'X-CSRFToken': csrfToken
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        const list = document.getElementById('notification-list');
+                        list.innerHTML = '<li class="notification-item empty"><p>No new notifications</p></li>';
+                        updateNotificationCount(-data.marked_count);
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+            }
+        
+            function updateNotificationCount(change) {
+                const countElement = document.getElementById('notification-count');
+                let count = parseInt(countElement.textContent) + change;
+                countElement.textContent = count;
+                if (count <= 0) {
+                    countElement.classList.add('hidden');
+                } else {
+                    countElement.classList.remove('hidden');
+                }
+            }
+        </script>
+        <script>
+            $(document).ready(function() {
+                $('.toggle-arrow').click(function() {
+                    const $container = $(this).parent().next('.task-container');
+                    const $icon = $(this).find('i');
+                    $container.slideToggle(300, function() {
+                        $icon.toggleClass('fa-chevron-down fa-chevron-up');
+                    });
+                });
+            });
+        </script>
+        <script>
+            let currentIndex = 0;
+            const projectsPerPage = 2;
+            const totalProjects = {{ projects|length }};
+        
+            function slideProjects(direction) {
+                const grid = document.getElementById('project-grid');
+                const projectCards = grid.querySelectorAll('.project-card');
+                const cardWidth = projectCards[0].offsetWidth + (projectCards[0].offsetWidth * 0.04); // Include margin
+                const maxIndex = Math.ceil(totalProjects / projectsPerPage) - 1;
+        
+                if (direction === 'next' && currentIndex < maxIndex) {
+                    currentIndex++;
+                    grid.style.transform = `translateX(-${currentIndex * cardWidth * projectsPerPage}px)`;
+                    document.querySelector('.slider-arrow.prev').style.display = 'block';
+                    if (currentIndex === maxIndex) {
+                        document.querySelector('.slider-arrow.next').style.display = 'none';
+                    }
+                } else if (direction === 'prev' && currentIndex > 0) {
+                    currentIndex--;
+                    grid.style.transform = `translateX(-${currentIndex * cardWidth * projectsPerPage}px)`;
+                    document.querySelector('.slider-arrow.next').style.display = 'block';
+                    if (currentIndex === 0) {
+                        document.querySelector('.slider-arrow.prev').style.display = 'none';
+                    }
+                }
+            }
+        </script>
+{% endblock %}

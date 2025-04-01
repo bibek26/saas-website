@@ -1,0 +1,81 @@
+<!-- templates/core/home.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Home</title>
+    <style>
+        table, th, td {
+            border: 1px solid black;
+            border-collapse: collapse;
+            padding: 10px;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+    </style>
+</head>
+<body>
+    <h1>Welcome, {{ user.username }}!</h1>
+    {% if user.is_superuser %}
+        <p><a href="{% url 'core:admin_dashboard' %}">View Dashboard</a></p>
+        <h2>All Tenants</h2>
+        <table>
+            <tr>
+                <th>Tenant Name</th>
+                <th>Schema Name</th>
+                <th>Domain</th>
+                <th>Actions</th>
+            </tr>
+            {% for tenant in tenants %}
+            <tr>
+                <td>{{ tenant.name }}</td>
+                <td>{{ tenant.schema_name }}</td>
+                <td>{{ tenant.domain }}</td>
+                <td><a href="http://{{ tenant.domain }}:8000">Visit</a></td>
+            </tr>
+            {% endfor %}
+        </table>
+        <p><a href="{% url 'admin:index' %}">Manage Users</a></p>
+    {% else %}
+        <h2>Your Details</h2>
+        <p><a href="{% url 'core:tenant_profile_edit' %}">Edit Profile</a></p>
+        <p><a href="{% url 'core:manage_subscription' %}">Manage Subscription</a></p>
+        {% if notifications %}
+            <h3>Notifications</h3>
+            <ul>
+                {% for notification in notifications %}
+                    <li>{{ notification.message }} ({{ notification.created_at|date:"Y-m-d H:i" }})</li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+        <table>
+            <tr>
+                <th>Field</th>
+                <th>Value</th>
+            </tr>
+            <tr>
+                <td>Username</td>
+                <td>{{ user.username }}</td>
+            </tr>
+            <tr>
+                <td>Email</td>
+                <td>{{ user.email }}</td>
+            </tr>
+            <tr>
+                <td>Full Name</td>
+                <td>{{ user.first_name }} {{ user.last_name }}</td>
+            </tr>
+            <tr>
+                <td>Phone Number</td>
+                <td>{{ user.phone_number|default:"Not provided" }}</td>
+            </tr>
+            <tr>
+                <td>Tenant</td>
+                <td>{{ tenant.name }} ({{ tenant.schema_name }})</td>
+            </tr>
+        </table>
+    {% endif %}
+    <p><a href="{% url 'core:logout' %}">Logout</a></p>
+</body>
+</html>

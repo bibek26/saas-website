@@ -1,0 +1,163 @@
+{% comment %} <form id="assign-task-form-{{ user.id }}" class="task-form" method="post" data-user-id="{{ user.id }}">
+    {% csrf_token %}
+    <label class="form-title">Assign Task</label>
+    <div class="form-group">
+        <label for="title-{{ user.id }}">Title</label>
+        <input type="text" id="title-{{ user.id }}" name="title" class="form-control" required>
+    </div>
+    <div class="form-group">
+        <label for="priority-{{ user.id }}">Priority</label>
+        <select id="priority-{{ user.id }}" name="priority" class="form-control" required>
+            <option value="Low">Low</option>
+            <option value="Medium">Medium</option>
+            <option value="High">High</option>
+        </select>
+    </div>
+    <div class="form-group">
+        <label for="due_date-{{ user.id }}">Due Date</label>
+        <input type="date" id="due_date-{{ user.id }}" name="due_date" class="form-control" required>
+    </div>
+    <div class="form-group">
+        <label for="status-{{ user.id }}">Status</label>
+        <select id="status-{{ user.id }}" name="status" class="form-control" required>
+            <option value="Assigned">Assigned</option>
+            <option value="In Progress">In Progress</option>
+            <option value="Completed">Completed</option>
+            <option value="Help Needed">Help Needed</option>
+        </select>
+    </div>
+
+    <div class="form-group">
+        <label for="{{ role_form.name.id_for_label }}">Role in Project</label>
+        {{ role_form.name }}
+    </div>
+    <div class="form-actions">
+        <button type="submit" class="btn btn-custom">Assign Task</button>
+        <button type="button" class="btn btn-secondary" onclick="$('#task-modal').hide();">Cancel</button>
+    </div>
+</form>
+
+<style>
+
+    .form-title {
+        display: block;
+        font-size: 24px;
+        font-weight: bold;
+        color: #333;
+        margin-bottom: 20px;
+        text-align: center;
+        border-bottom: 2px solid #007bff;
+        padding-bottom: 5px;
+    }
+    .form-group {
+        margin-bottom: 15px;
+    }
+    .form-group label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: 500;
+        color: #555;
+    }
+    .form-control {
+        width: 100%;
+        padding: 8px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+    }
+    .form-actions {
+        margin-top: 20px;
+        text-align: right;
+    }
+    .btn {
+        padding: 8px 15px;
+        margin-left: 10px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+    .btn-custom {
+        background-color: #007bff;
+        color: white;
+    }
+    .btn-secondary {
+        background-color: #6c757d;
+        color: white;
+    }
+    </style>  {% endcomment %}
+{% comment %} 
+    {% load widget_tweaks %}
+    <form method="post" enctype="multipart/form-data" id="task-form">
+        {% csrf_token %}
+        <div class="form-group">
+            <label for="{{ task_form.title.id_for_label }}">Task Title</label>
+            {{ task_form.title|add_class:"form-control" }}
+        </div>
+        <div class="form-group">
+            <label for="{{ task_form.project.id_for_label }}">Project</label>
+            {{ task_form.project|add_class:"form-control" }}
+        </div>
+        <div class="form-group">
+            <label for="{{ task_form.priority.id_for_label }}">Priority</label>
+            {{ task_form.priority|add_class:"form-control" }}
+        </div>
+        <div class="form-group">
+            <label for="{{ task_form.due_date.id_for_label }}">Due Date</label>
+            {{ task_form.due_date|add_class:"form-control" }}
+        </div>
+        <div class="form-group">
+            <label for="{{ role_form.name.id_for_label }}">Role in Project</label>
+            {{ role_form.name|add_class:"form-control" }}
+        </div>
+        <button type="submit" class="btn btn-custom">Assign Task</button>
+    </form> {% endcomment %}
+
+    {% load widget_tweaks %}
+
+    <form id="assign-task-form-{{ user.id }}" class="task-form" method="post" data-user-id="{{ user.id }}">
+        {% csrf_token %}
+        <label class="form-title">Assign Task</label>
+        <div class="form-group">
+            <label for="{{ task_form.title.id_for_label }}">Title</label>
+            {{ task_form.title|add_class:"form-control" }}
+            {% if task_form.title.errors %}
+                <span class="error">{{ task_form.title.errors|join:", " }}</span>
+            {% endif %}
+        </div>
+        <div class="form-group">
+            <label for="{{ task_form.project.id_for_label }}">Project</label>
+            {{ task_form.project|add_class:"form-control" }}
+            {% if task_form.project.errors %}
+                <span class="error">{{ task_form.project.errors|join:", " }}</span>
+            {% endif %}
+        </div>
+        <div class="form-group">
+            <label for="{{ task_form.priority.id_for_label }}">Priority</label>
+            {{ task_form.priority|add_class:"form-control" }}
+            {% if task_form.priority.errors %}
+                <span class="error">{{ task_form.priority.errors|join:", " }}</span>
+            {% endif %}
+        </div>
+        <div class="form-group">
+            <label for="{{ task_form.due_date.id_for_label }}">Due Date</label>
+            {{ task_form.due_date|add_class:"form-control" }}
+            {% if task_form.due_date.errors %}
+                <span class="error">{{ task_form.due_date.errors|join:", " }}</span>
+            {% endif %}
+        </div>
+        <div class="form-actions">
+            <button type="submit" class="btn btn-custom">Assign Task</button>
+            <button type="button" class="btn btn-secondary" onclick="$('#task-modal').hide();">Cancel</button>
+        </div>
+    </form>
+    
+    <style>
+        .form-title { display: block; font-size: 24px; font-weight: bold; color: #333; margin-bottom: 20px; text-align: center; border-bottom: 2px solid #007bff; padding-bottom: 5px; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; font-weight: 500; color: #555; }
+        .form-control { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; }
+        .form-actions { margin-top: 20px; text-align: right; }
+        .btn { padding: 8px 15px; margin-left: 10px; border: none; border-radius: 4px; cursor: pointer; }
+        .btn-custom { background-color: #007bff; color: white; }
+        .btn-secondary { background-color: #6c757d; color: white; }
+        .error { color: red; font-size: 12px; }
+    </style>

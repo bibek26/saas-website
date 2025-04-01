@@ -1,0 +1,103 @@
+<!-- templates/admin/assign_task.html -->
+ {% comment %} <h2>Assign Task to {{ user.username }}</h2>
+<form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">Assign</button>
+</form>
+<a href="{% url 'core:user_list' %}">Back to User List</a> {% endcomment %}
+
+<form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    <div>
+        <label for="{{ task_form.title.id_for_label }}">Task Title</label>
+        {{ task_form.title }}
+        {% if task_form.title.errors %}
+            <span style="color: red;">{{ task_form.title.errors|join:", " }}</span>
+        {% endif %}
+    </div>
+    <div>
+        <label for="{{ task_form.project.id_for_label }}">Project</label>
+        {{ task_form.project }}
+        {% if task_form.project.errors %}
+            <span style="color: red;">{{ task_form.project.errors|join:", " }}</span>
+        {% endif %}
+    </div>
+    <div>
+        <label for="{{ task_form.priority.id_for_label }}">Priority</label>
+        {{ task_form.priority }}
+        {% if task_form.priority.errors %}
+            <span style="color: red;">{{ task_form.priority.errors|join:", " }}</span>
+        {% endif %}
+    </div>
+    <div>
+        <label for="{{ task_form.due_date.id_for_label }}">Due Date</label>
+        {{ task_form.due_date }}
+        {% if task_form.due_date.errors %}
+            <span style="color: red;">{{ task_form.due_date.errors|join:", " }}</span>
+        {% endif %}
+    </div>
+    <button type="submit">Assign</button>
+</form>
+
+{% comment %} {% extends 'core/base.html' %}
+{% load static widget_tweaks %}
+
+{% block title %}Assign Task{% endblock %}
+{% block content %}
+<div class="dashboard-container">
+    <div class="dashboard-card">
+        <div class="card-header">
+            <h3>Assign Task to {{ user.username }}</h3>
+        </div>
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            <div class="form-group">
+                <label for="{{ task_form.title.id_for_label }}">Task Title</label>
+                {{ task_form.title|add_class:"form-control" }}
+                {% if task_form.title.errors %}
+                    <span class="error">{{ task_form.title.errors|join:", " }}</span>
+                {% endif %}
+            </div>
+            <div class="form-group">
+                <label for="{{ task_form.project.id_for_label }}">Project</label>
+                {{ task_form.project|add_class:"form-control" }}
+                {% if task_form.project.errors %}
+                    <span class="error">{{ task_form.project.errors|join:", " }}</span>
+                {% endif %}
+            </div>
+            <div class="form-group">
+                <label for="{{ task_form.priority.id_for_label }}">Priority</label>
+                {{ task_form.priority|add_class:"form-control" }}
+                {% if task_form.priority.errors %}
+                    <span class="error">{{ task_form.priority.errors|join:", " }}</span>
+                {% endif %}
+            </div>
+            <div class="form-group">
+                <label for="{{ task_form.due_date.id_for_label }}">Due Date</label>
+                {{ task_form.due_date|add_class:"form-control" }}
+                {% if task_form.due_date.errors %}
+                    <span class="error">{{ task_form.due_date.errors|join:", " }}</span>
+                {% endif %}
+            </div>
+            <div class="form-group">
+                <label for="{{ role_form.name.id_for_label }}">Role in Project</label>
+                {{ role_form.name|add_class:"form-control" }}
+                {% if role_form.name.errors %}
+                    <span class="error">{{ role_form.name.errors|join:", " }}</span>
+                {% endif %}
+            </div>
+            <button type="submit" class="btn btn-custom">Assign Task</button>
+        </form>
+    </div>
+</div>
+
+<style>
+    .form-group { margin-bottom: 15px; }
+    .form-group label { font-weight: bold; margin-bottom: 5px; display: block; }
+    .form-control { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; }
+    .btn-custom { background-color: #007bff; color: white; padding: 8px 15px; border: none; border-radius: 4px; }
+    .btn-custom:hover { background-color: #0056b3; }
+    .error { color: red; font-size: 12px; }
+</style>
+{% endblock %} {% endcomment %}

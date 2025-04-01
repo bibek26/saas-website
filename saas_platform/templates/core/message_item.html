@@ -1,0 +1,9 @@
+
+<div class="message {% if message.sender == current_user %}message-right{% else %}message-left{% endif %}">
+    <div class="message-content">
+        {{ message.content }}
+    </div>
+    <div class="message-time">
+        {{ message.timestamp|date:"M d, H:i" }}
+    </div>
+</div>

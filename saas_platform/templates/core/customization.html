@@ -1,0 +1,44 @@
+<!-- templates/core/customization.html -->
+{% extends 'core/base.html' %}
+{% load static widget_tweaks %}
+
+{% block title %}Customization{% endblock %}
+
+{% block content %}
+    <h1 class="mb-4">Customization</h1>
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        <h4>Branding</h4>
+        <div class="mb-3">
+            <label for="id_name" class="form-label">Company Name</label>
+            {{ tenant_form.name|add_class:"form-control" }}
+            {% if tenant_form.name.errors %}
+                <div class="text-danger">{{ tenant_form.name.errors }}</div>
+            {% endif %}
+        </div>
+        <h4>Theme</h4>
+        <div class="mb-3">
+            <label for="id_primary_color" class="form-label">Button Color</label>
+            {{ custom_form.primary_color|add_class:"form-control" }}
+            {% if custom_form.primary_color.errors %}
+                <div class="text-danger">{{ custom_form.primary_color.errors }}</div>
+            {% endif %}
+        </div>
+        <div class="mb-3">
+            <label for="id_secondary_color" class="form-label">Button Hover Color</label>
+            {{ custom_form.secondary_color|add_class:"form-control" }}
+            {% if custom_form.secondary_color.errors %}
+                <div class="text-danger">{{ custom_form.secondary_color.errors }}</div>
+            {% endif %}
+        </div>
+        {% comment %} <div class="mb-3">
+            <label for="id_background_color" class="form-label">Background Color</label>
+            {{ custom_form.background_color|add_class:"form-control" }}
+            {% if custom_form.background_color.errors %}
+                <div class="text-danger">{{ custom_form.background_color.errors }}</div>
+            {% endif %}
+        </div> {% endcomment %}
+        <button type="submit" class="btn btn-custom">Save</button>
+        <a href="{% url 'core:tenant_home' %}" class="btn btn-secondary">Cancel</a>
+    </form>
+{% endblock %}

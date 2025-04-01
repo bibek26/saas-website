@@ -1,0 +1,32 @@
+<!-- templates/admin/user_messages.html -->
+<h2>Messages Sent by {{ user.username }}</h2>
+<ul>
+    {% for message in messages %}
+    <li>
+        {{ message.timestamp }} - To: {{ message.recipient.username }} - {{ message.content }}
+        <button class="reply-button" data-message-id="{{ message.id }}">Reply</button>
+        <div class="reply-form" id="reply-form-{{ message.id }}" style="display: none;">
+            <form method="post" action="{% url 'core:send_reply' message.id %}">
+                {% csrf_token %}
+                <textarea name="content" placeholder="Write your reply..."></textarea>
+                <button type="submit">Send</button>
+            </form>
+        </div>
+    </li>
+    {% empty %}
+    <li>No messages sent by this user.</li>
+    {% endfor %}
+</ul>
+<a href="{% url 'core:user_list' %}">Back to User List</a>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        document.querySelectorAll('.reply-button').forEach(button => {
+            button.addEventListener('click', function() {
+                const messageId = this.getAttribute('data-message-id');
+                const form = document.getElementById(`reply-form-${messageId}`);
+                form.style.display = form.style.display === 'none' ? 'block' : 'none';
+            });
+        });
+    });
+</script>

@@ -1,0 +1,29 @@
+<!-- templates/core/analytics.html -->
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Analytics{% endblock %}
+
+{% block content %}
+    <h1 class="mb-4">Analytics & Reports</h1>
+    <h3>Usage Analytics</h3>
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>User Count</th>
+                <th>API Calls</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for data in analytics_data %}
+            <tr>
+                <td>{{ data.date }}</td>
+                <td>{{ data.user_count }}</td>
+                <td>{{ data.api_calls }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <a href="{% url 'core:download_report' %}" class="btn btn-custom">Download CSV Report</a>
+{% endblock %}

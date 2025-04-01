@@ -1,0 +1,104 @@
+{% extends 'core/base.html' %}
+{% load static widget_tweaks %}
+
+{% block title %}Edit Tenant Profile{% endblock %}
+
+{% block content %}
+    <h1 class="mb-4">Edit Profile & Customization</h1>
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        <div class="mb-3">
+            <h4>User Details</h4>
+            <div class="mb-2">
+                <label for="id_first_name" class="form-label">First Name</label>
+                {{ user_form.first_name|add_class:"form-control" }}
+                {% if user_form.first_name.errors %}
+                    <div class="text-danger">{{ user_form.first_name.errors }}</div>
+                {% endif %}
+            </div>
+            <div class="mb-2">
+                <label for="id_last_name" class="form-label">Last Name</label>
+                {{ user_form.last_name|add_class:"form-control" }}
+                {% if user_form.last_name.errors %}
+                    <div class="text-danger">{{ user_form.last_name.errors }}</div>
+                {% endif %}
+            </div>
+            <div class="mb-2">
+                <label for="id_email" class="form-label">Email</label>
+                {{ user_form.email|add_class:"form-control" }}
+                {% if user_form.email.errors %}
+                    <div class="text-danger">{{ user_form.email.errors }}</div>
+                {% endif %}
+            </div>
+            <div class="mb-2">
+                <label for="id_phone_number" class="form-label">Phone Number</label>
+                {{ user_form.phone_number|add_class:"form-control" }}
+                {% if user_form.phone_number.errors %}
+                    <div class="text-danger">{{ user_form.phone_number.errors }}</div>
+                {% endif %}
+            </div>
+        </div>
+        <div class="mb-3">
+            <h4>Tenant Details</h4>
+            <div class="mb-2">
+                <label for="id_name" class="form-label">Company Name</label>
+                {{ tenant_form.name|add_class:"form-control" }}
+                {% if tenant_form.name.errors %}
+                    <div class="text-danger">{{ tenant_form.name.errors }}</div>
+                {% endif %}
+            </div>
+            <div class="mb-2">
+                <label for="id_logo" class="form-label">Logo</label>
+                {{ tenant_form.logo|add_class:"form-control" }}
+                {% if tenant.logo %}
+                    <img src="{{ tenant.logo.url }}" alt="Current Logo" class="mt-2" style="max-width: 100px;">
+                {% endif %}
+                {% if tenant_form.logo.errors %}
+                    <div class="text-danger">{{ tenant_form.logo.errors }}</div>
+                {% endif %}
+            </div>
+            <h4>Theme Customization</h4>
+            <div class="mb-2">
+                <label for="id_primary_color" class="form-label">Primary Color</label>
+                {{ custom_form.primary_color }}
+                {% if custom_form.primary_color.errors %}
+                    <div class="text-danger">{{ custom_form.primary_color.errors }}</div>
+                {% endif %}
+            </div>
+            <div class="mb-2">
+                <label for="id_secondary_color" class="form-label">Secondary Color</label>
+                {{ custom_form.secondary_color}}
+                {% if custom_form.secondary_color.errors %}
+                    <div class="text-danger">{{ custom_form.secondary_color.errors }}</div>
+                {% endif %}
+            </div>
+        </div>
+        <button type="submit" class="btn btn-custom">Save Changes</button>
+        <a href="{% url 'core:tenant_home' %}" class="btn btn-secondary ms-2">Cancel</a>
+    </form>
+    <a href="{% url 'core:change_password' %}">Change Password</a>
+{% endblock %}
+
+{% comment %} <!-- templates/core/tenant_profile_edit.html -->
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Edit Tenant Profile{% endblock %}
+
+{% block content %}
+    <h1 class="mb-4">Edit Profile & Logo</h1>
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        <div class="mb-3">
+            {{ user_form.as_p }}
+        </div>
+        <div class="mb-3">
+            <h4>Tenant Details</h4>
+            {{ tenant_form.as_p }}
+        </div>
+        <button type="submit" class="btn btn-custom">Save Changes</button>
+        <a href="{% url 'core:tenant_home' %}" class="btn btn-secondary ms-2">Cancel</a>
+    </form>
+{% endblock %} {% endcomment %}
+
+<!-- templates/core/tenant_profile_edit.html -->

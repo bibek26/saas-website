@@ -1,0 +1,58 @@
+<!-- templates/core/manage_subscription.html -->
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Manage Subscription{% endblock %}
+
+{% block content %}
+    <h1 class="mb-4">Manage Your Subscription</h1>
+    
+    {% if not selected_plan %}
+        <!-- Step 1: Select Plan -->
+        <form method="post" class="mb-3">
+            {% csrf_token %}
+            <div class="mb-3">
+                <label for="plan" class="form-label">Select Plan:</label>
+                <select name="plan" id="plan" class="form-select">
+                    <option value="basic" {% if subscription.plan == 'basic' %}selected{% endif %}>Basic (1 Month)</option>
+                    <option value="pro" {% if subscription.plan == 'pro' %}selected{% endif %}>Pro (6 Months)</option>
+                </select>
+            </div>
+            <button type="submit" class="btn btn-custom">Next</button>
+            <a href="{% url 'core:subscription_billing' %}" class="btn btn-secondary ms-2">Cancel</a>
+        </form>
+    {% else %}
+        <!-- Step 2: Confirm Billing Details -->
+        <h3>Review Your Selection</h3>
+        <p><strong>Selected Plan:</strong> {{ selected_plan|title }} ({{ plan_duration }})</p>
+        <p><strong>Cost:</strong> ${{ plan_cost }}</p>
+        
+        <h4>Billing Details</h4>
+        <table class="table table-bordered mb-3">
+            <tr>
+                <th>Card Number</th>
+                <td>{{ billing_info.card_number|default:"Not set" }}</td>
+            </tr>
+            <tr>
+                <th>Expiry Date</th>
+                <td>{{ billing_info.expiry_date|default:"Not set" }}</td>
+            </tr>
+            <tr>
+                <th>CVV</th>
+                <td>{{ billing_info.cvv|default:"Not set" }}</td>
+            </tr>
+        </table>
+        {% if not billing_info.card_number %}
+            <p class="text-warning">Please update your billing information to proceed.</p>
+            <a href="{% url 'core:update_billing' %}" class="btn btn-warning mb-3">Update Billing Info</a>
+        {% else %}
+            <form method="post">
+                {% csrf_token %}
+                <input type="hidden" name="plan" value="{{ selected_plan }}">
+                <input type="hidden" name="confirm" value="true">
+                <button type="submit" class="btn btn-custom">Confirm Subscription</button>
+                <a href="{% url 'core:manage_subscription' %}" class="btn btn-secondary ms-2">Back</a>
+            </form>
+        {% endif %}
+    {% endif %}
+{% endblock %}

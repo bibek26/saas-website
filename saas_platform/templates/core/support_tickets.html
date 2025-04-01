@@ -1,0 +1,11 @@
+{% extends 'core/base.html' %}
+
+{% block content %}
+<h1>Support Tickets</h1>
+<ul>
+    {% for ticket in tickets %}
+    <li>{{ ticket.title }} - {{ ticket.status }}</li>
+    {% endfor %}
+</ul>
+<a href="{% url 'core:create_ticket' %}">Create New Ticket</a>
+{% endblock %}

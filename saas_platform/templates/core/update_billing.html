@@ -1,0 +1,38 @@
+{% extends 'core/base.html' %}
+{% load static widget_tweaks %}
+
+{% block title %}Update Billing{% endblock %}
+
+{% block content %}
+    <h1 class="mb-4">Update Billing Information</h1>
+    <form method="post" action="{% url 'core:update_billing' %}">
+        {% csrf_token %}
+        
+        <div class="mb-3">
+            <label for="card_number" class="form-label">Card Number</label>
+            {{ form.card_number|add_class:"form-control"|attr:"autocomplete:off" }}
+            {% if form.card_number.errors %}
+                <div class="text-danger">{{ form.card_number.errors }}</div>
+            {% endif %}
+        </div>
+        
+        <div class="mb-3">
+            <label for="expiry_date" class="form-label">Expiry Date (MM/YY)</label>
+            {{ form.expiry_date|add_class:"form-control"|attr:"autocomplete:off" }}
+            {% if form.expiry_date.errors %}
+                <div class="text-danger">{{ form.expiry_date.errors }}</div>
+            {% endif %}
+        </div>
+        
+        <div class="mb-3">
+            <label for="cvv" class="form-label">CVV</label>
+            {{ form.cvv|add_class:"form-control"|attr:"autocomplete:off" }}
+            {% if form.cvv.errors %}
+                <div class="text-danger">{{ form.cvv.errors }}</div>
+            {% endif %}
+        </div>
+        
+        <button type="submit" class="btn btn-custom">Save</button>
+        <a href="{% url 'core:subscription_billing' %}" class="btn btn-secondary ms-2">Cancel</a>
+    </form>
+{% endblock %}

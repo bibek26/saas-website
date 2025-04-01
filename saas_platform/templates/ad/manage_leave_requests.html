@@ -1,0 +1,18 @@
+<!-- templates/admin/manage_leave_requests.html -->
+<h2>Manage Leave Requests</h2>
+<ul>
+    {% for req in leave_requests %}
+    <li>
+        {{ req.user.username }} - {{ req.start_date }} to {{ req.end_date }} - {{ req.reason }}
+        <form method="post" style="display:inline;">
+            {% csrf_token %}
+            <input type="hidden" name="request_id" value="{{ req.id }}">
+            <button type="submit" name="action" value="approve">Approve</button>
+            <button type="submit" name="action" value="deny">Deny</button>
+        </form>
+    </li>
+    {% empty %}
+    <li>No pending leave requests.</li>
+    {% endfor %}
+</ul>
+<a href="{% url 'core:user_list' %}">Back to User List</a>

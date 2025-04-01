@@ -1,0 +1,31 @@
+<!-- templates/core/admin_home.html -->
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Admin Home{% endblock %}
+
+{% block content %}
+    <h1 class="mb-4">Admin Dashboard</h1>
+    <p><a href="{% url 'core:admin_dashboard' %}">View Dashboard</a></p>
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Tenant Name</th>
+                <th>Schema Name</th>
+                <th>Domain</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for tenant in tenants %}
+            <tr>
+                <td>{{ tenant.name }}</td>
+                <td>{{ tenant.schema_name }}</td>
+                <td>{{ tenant.domain }}</td>
+                <td><a href="http://{{ tenant.domain }}:8000" class="btn btn-custom btn-sm">Visit</a></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <a href="{% url 'admin:index' %}" class="btn btn-custom mt-3">Manage Users</a>
+{% endblock %}

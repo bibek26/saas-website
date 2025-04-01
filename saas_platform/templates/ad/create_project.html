@@ -1,0 +1,47 @@
+{% extends 'core/base.html' %}
+{% load static widget_tweaks %}
+
+{% block title %}Create Project{% endblock %}
+{% block content %}
+<div class="dashboard-container">
+    <div class="dashboard-card">
+        <div class="card-header">
+            <h3>Create New Project</h3>
+        </div>
+        <form method="post">
+            {% csrf_token %}
+            <div class="form-group">
+                <label for="{{ form.name.id_for_label }}">Project Name</label>
+                {{ form.name|add_class:"form-control" }}
+                {% if form.name.errors %}
+                    <span class="error">{{ form.name.errors|join:", " }}</span>
+                {% endif %}
+            </div>
+            <div class="form-group">
+                <label for="{{ form.deadline.id_for_label }}">Deadline</label>
+                {{ form.deadline|add_class:"form-control" }}
+                {% if form.deadline.errors %}
+                    <span class="error">{{ form.deadline.errors|join:", " }}</span>
+                {% endif %}
+            </div>
+            <div class="form-group">
+                <label>Members</label>
+                {{ form.members|add_class:"form-control" }}
+                {% if form.members.errors %}
+                    <span class="error">{{ form.members.errors|join:", " }}</span>
+                {% endif %}
+            </div>
+            <button type="submit" class="btn btn-custom">Create Project</button>
+        </form>
+    </div>
+</div>
+
+<style>
+    .form-group { margin-bottom: 15px; }
+    .form-group label { font-weight: bold; margin-bottom: 5px; display: block; }
+    .form-control { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; }
+    .btn-custom { background-color: #007bff; color: white; padding: 8px 15px; border: none; border-radius: 4px; }
+    .btn-custom:hover { background-color: #0056b3; }
+    .error { color: red; font-size: 12px; }
+</style>
+{% endblock %}

@@ -1,0 +1,221 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Add User{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="card shadow-sm p-4 mt-5">
+        <h1 class="card-title text-center mb-4">
+            <i class="fas fa-user-plus me-2"></i> Add New User
+        </h1>
+        <form method="post" class="needs-validation" novalidate>
+            {% csrf_token %}
+            <div class="row g-3">
+                <!-- Username -->
+                <div class="col-md-6">
+                    <div class="form-group mb-3">
+                        <label for="{{ form.username.id_for_label }}" class="form-label fw-bold">
+                            <i class="fas fa-user me-2"></i> Username <span class="text-danger">*</span>
+                        </label>
+                        <input type="text" name="username" id="{{ form.username.id_for_label }}"
+                               value="{{ form.username.value|default:'' }}"
+                               class="form-control" required>
+                        {% if form.username.errors %}
+                            <span class="invalid-feedback d-block">{{ form.username.errors|join:", " }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Email -->
+                <div class="col-md-6">
+                    <div class="form-group mb-3">
+                        <label for="{{ form.email.id_for_label }}" class="form-label fw-bold">
+                            <i class="fas fa-envelope me-2"></i> Email Address <span class="text-danger">*</span>
+                        </label>
+                        <input type="email" name="email" id="{{ form.email.id_for_label }}"
+                               value="{{ form.email.value|default:'' }}"
+                               class="form-control" required>
+                        {% if form.email.errors %}
+                            <span class="invalid-feedback d-block">{{ form.email.errors|join:", " }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- First Name -->
+                <div class="col-md-6">
+                    <div class="form-group mb-3">
+                        <label for="{{ form.first_name.id_for_label }}" class="form-label fw-bold">
+                            <i class="fas fa-user me-2"></i> First Name
+                        </label>
+                        <input type="text" name="first_name" id="{{ form.first_name.id_for_label }}"
+                               value="{{ form.first_name.value|default:'' }}"
+                               class="form-control">
+                        {% if form.first_name.errors %}
+                            <span class="invalid-feedback d-block">{{ form.first_name.errors|join:", " }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Last Name -->
+                <div class="col-md-6">
+                    <div class="form-group mb-3">
+                        <label for="{{ form.last_name.id_for_label }}" class="form-label fw-bold">
+                            <i class="fas fa-user me-2"></i> Last Name
+                        </label>
+                        <input type="text" name="last_name" id="{{ form.last_name.id_for_label }}"
+                               value="{{ form.last_name.value|default:'' }}"
+                               class="form-control">
+                        {% if form.last_name.errors %}
+                            <span class="invalid-feedback d-block">{{ form.last_name.errors|join:", " }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Phone Number -->
+                <div class="col-md-6">
+                    <div class="form-group mb-3">
+                        <label for="{{ form.phone_number.id_for_label }}" class="form-label fw-bold">
+                            <i class="fas fa-phone me-2"></i> Phone Number
+                        </label>
+                        <input type="text" name="phone_number" id="{{ form.phone_number.id_for_label }}"
+                               value="{{ form.phone_number.value|default:'' }}"
+                               class="form-control">
+                        {% if form.phone_number.errors %}
+                            <span class="invalid-feedback d-block">{{ form.phone_number.errors|join:", " }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Role -->
+                <div class="col-md-6">
+                    <div class="form-group mb-3">
+                        <label for="{{ form.role.id_for_label }}" class="form-label fw-bold">
+                            <i class="fas fa-user-tag me-2"></i> Role
+                        </label>
+                        <div class="dropdown-arrow"></div>
+                        <select name="role" id="{{ form.role.id_for_label }}" class="form-control">
+                            <option value="" {% if not form.role.value %}selected{% endif %}>Select a role</option>
+                            <option value="admin" {% if form.role.value == 'admin' %}selected{% endif %}>Admin</option>
+                            <option value="manager" {% if form.role.value == 'manager' %}selected{% endif %}>Manager</option>
+                            <option value="user" {% if form.role.value == 'user' %}selected{% endif %}>User</option>
+                        </select>
+                        {% if form.role.errors %}
+                            <span class="invalid-feedback d-block">{{ form.role.errors|join:", " }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Password -->
+                <div class="col-md-12">
+                    <div class="form-group mb-3">
+                        <label for="{{ form.password.id_for_label }}" class="form-label fw-bold">
+                            <i class="fas fa-lock me-2"></i> Password <span class="text-danger">*</span>
+                        </label>
+                        <input type="password" name="password" id="{{ form.password.id_for_label }}"
+                               value="{{ form.password.value|default:'' }}"
+                               class="form-control" required>
+                        {% if form.password.errors %}
+                            <span class="invalid-feedback d-block">{{ form.password.errors|join:", " }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            <div class="d-flex justify-content-end gap-2 mt-4">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save me-2"></i> Add User
+                </button>
+                <a href="{% url 'core:user_management' %}" class="btn btn-secondary">
+                    <i class="fas fa-times me-2"></i> Cancel
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+    .container {
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+    .card {
+        border-radius: 10px;
+        background: #fff;
+    }
+    .card-title {
+        color: #333;
+        font-size: 1.8rem;
+    }
+    .form-label {
+        color: #555;
+    }
+    .form-control {
+        border-radius: 5px;
+        padding: 10px;
+    }
+    .form-control:focus {
+        border-color: #007bff;
+        box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
+    }
+    .btn-primary {
+        background-color: #007bff;
+        border: none;
+        padding: 10px 20px;
+    }
+    .btn-primary:hover {
+        background-color: #0056b3;
+    }
+    .btn-secondary {
+        background-color: #6c757d;
+        border: none;
+        padding: 10px 20px;
+    }
+    .btn-secondary:hover {
+        background-color: #5a6268;
+    }
+    .invalid-feedback {
+        display: block;
+        color: #dc3545;
+        font-size: 0.9rem;
+    }
+    .text-danger {
+        font-size: 1.2rem;
+        vertical-align: middle;
+    }
+</style>
+
+<script>
+    // Bootstrap form validation
+    (function () {
+        'use strict';
+        window.addEventListener('load', function () {
+            var forms = document.getElementsByClassName('needs-validation');
+            Array.prototype.filter.call(forms, function (form) {
+                form.addEventListener('submit', function (event) {
+                    if (form.checkValidity() === false) {
+                        event.preventDefault();
+                        event.stopPropagation();
+                    }
+                    form.classList.add('was-validated');
+                }, false);
+            });
+        }, false);
+    })();
+</script>
+{% endblock %}
+
+{% comment %} {% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Add User{% endblock %}
+
+{% block content %}
+    <h1 class="mb-4">Add New User</h1>
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit" class="btn btn-custom">Add User</button>
+        <a href="{% url 'core:user_management' %}" class="btn btn-secondary">Cancel</a>
+    </form>
+{% endblock %} {% endcomment %}

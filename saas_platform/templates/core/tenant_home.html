@@ -1,0 +1,595 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Tenant Dashboard{% endblock %}
+
+{% block extra_css %}
+<style>
+    .dashboard-container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 2rem;
+    }
+    
+    .dashboard-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+    }
+    
+    .dashboard-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 2rem;
+    }
+    
+    .dashboard-card {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        padding: 1.5rem;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    
+    .dashboard-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
+    }
+    
+    .card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+        padding-bottom: 0.75rem;
+        border-bottom: 1px solid #f1f5f9;
+    }
+    
+    .card-title {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: var(--text-color);
+    }
+    
+    .user-details-table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0 0.75rem;
+    }
+    
+    .user-details-table th {
+        text-align: left;
+        padding: 0.5rem 1rem;
+        color: #64748b;
+        font-weight: 500;
+        width: 35%;
+    }
+    
+    .user-details-table td {
+        padding: 0.5rem 1rem;
+        background: #f8fafc;
+        border-radius: 6px;
+    }
+    
+    .notification-item, .activity-item {
+        padding: 0.75rem 0;
+        border-bottom: 1px solid #f1f5f9;
+        display: flex;
+        justify-content: space-between;
+    }
+    
+    .notification-item:last-child, .activity-item:last-child {
+        border-bottom: none;
+    }
+    
+    .notification-time, .activity-time {
+        color: #64748b;
+        font-size: 0.8rem;
+    }
+    
+    .action-buttons {
+        display: flex;
+        gap: 0.75rem;
+        margin-top: 1.5rem;
+    }
+    
+    .btn-custom {
+        background: var(--primary-color);
+        color: white;
+        padding: 0.5rem 1.25rem;
+        border-radius: 6px;
+        text-decoration: none;
+        transition: background 0.2s ease;
+    }
+    
+    .btn-custom:hover {
+        background: var(--primary-hover);
+        color: white;
+    }
+    
+    .empty-state {
+        color: #64748b;
+        text-align: center;
+        padding: 1.5rem 0;
+    }
+
+    #leave-requests-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    #leave-requests-table th, #leave-requests-table td {
+        border: 1px solid #ddd;
+        padding: 8px;
+    }
+    #leave-requests-table th {
+        background-color: #f2f2f2;
+    }
+    button {
+        margin: 0 5px;
+        padding: 5px 10px;
+    }
+
+
+    .leave-requests-wrapper {
+        position: relative;
+        width: 100%;
+    }
+    
+    .compact-card {
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        margin-top: 1rem;
+        max-width: 800px;
+        transition: all 0.3s ease;
+        position: absolute;
+        right: 0;
+        z-index: 100;
+    }
+    
+    .card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1rem;
+        border-bottom: 1px solid #f1f5f9;
+    }
+    
+    .card-title {
+        margin: 0;
+        font-size: 1.1rem;
+        color: var(--text-color);
+    }
+    
+    .compact-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.9rem;
+    }
+    
+    .compact-table th,
+    .compact-table td {
+        padding: 0.75rem 1rem;
+        text-align: left;
+    }
+    
+    .compact-table thead th {
+        background-color: #f8fafc;
+        color: #64748b;
+        font-weight: 500;
+        border-bottom: 2px solid #e2e8f0;
+    }
+    
+    .compact-table tbody tr:not(:last-child) {
+        border-bottom: 1px solid #f1f5f9;
+    }
+    
+    .compact-table tbody td {
+        vertical-align: middle;
+    }
+    
+    .action-buttons {
+        display: flex;
+        gap: 0.5rem;
+    }
+    
+    .btn-action {
+        padding: 0.25rem 0.75rem;
+        border-radius: 4px;
+        font-size: 0.8rem;
+        border: none;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    
+    .btn-approve {
+        background: #dcfce7;
+        color: #166534;
+    }
+    
+    .btn-reject {
+        background: #fee2e2;
+        color: #991b1b;
+    }
+    
+    .btn-close {
+        background: none;
+        border: none;
+        cursor: pointer;
+        color: #64748b;
+        font-size: 1.25rem;
+        padding: 0 0.5rem;
+    }
+    
+    .btn-close:hover {
+        color: var(--primary-color);
+    }
+    
+    @media (max-width: 768px) {
+        .compact-card {
+            max-width: 100%;
+            overflow-x: auto;
+        }
+    }
+
+    .tasks-wrapper {
+        margin-top: 20px;
+    }
+    .pagination {
+        margin-top: 10px;
+        text-align: center;
+    }
+    .step-links a {
+        margin: 0 5px;
+    }
+    .comments-cell {
+        max-width: 200px; /* Limit width to prevent overflow */
+        word-wrap: break-word; /* Wrap long comments */
+    }
+    .attachments-cell {
+        max-width: 150px;
+    }
+    .attachment-link {
+        color: #007bff;
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+    .attachment-link:hover {
+        text-decoration: underline;
+        color: #0056b3;
+    }
+    .attachment-link i {
+        font-size: 1.1em;
+    }
+
+
+    .pagination {
+        margin-top: 20px;
+        text-align: center;
+    }
+    .step-links {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 10px;
+    }
+    .btn-custom {
+        padding: 5px 10px;
+        background: #007bff;
+        color: white;
+        text-decoration: none;
+        border-radius: 5px;
+    }
+    .btn-custom:hover {
+        background: #0056b3;
+    }
+    .current {
+        font-size: 1em;
+        color: #555;
+    }
+    .empty-state {
+        text-align: center;
+        padding: 20px;
+        color: #888;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
+<div class="dashboard-container">
+    <div class="dashboard-header">
+        <h1>Tenant Dashboard</h1>
+        {% if is_admin %}
+        <div class="admin-actions">
+            <a href="{% url 'core:user_management' %}" class="btn-custom">User Management</a>
+            <a href="{% url 'core:create_project' %}" class="btn-custom">Create New Project</a>
+            <a href="{% url 'core:analytics' %}" class="btn-custom">Analytics</a>
+            <a href="#" class="btn-custom" id="manage-leave-btn">Manage Leave Requests</a>
+        </div>
+        {% endif %}
+    </div>
+
+
+    {% comment %} <div id="leave-requests-container" style="display: none; margin-top: 20px;">
+        <h2>Pending Leave Requests</h2>
+        <table id="leave-requests-table">
+            <thead>
+                <tr>
+                    <th>User</th>
+                    <th>Start Date</th>
+                    <th>End Date</th>
+                    <th>Reason</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody id="leave-requests-body"></tbody>
+        </table>
+    </div> {% endcomment %}
+    <div class="leave-requests-wrapper">
+        <div id="leave-requests-container" class="compact-card" style="display: none;">
+            <div class="card-header">
+                <h3 class="card-title">Pending Leave Requests</h3>
+                <button class="btn-close" onclick="toggleLeaveRequests()">&times;</button>
+            </div>
+            <div class="card-body">
+                <table class="compact-table">
+                    <thead>
+                        <tr>
+                            <th>User</th>
+                            <th>Start Date</th>
+                            <th>End Date</th>
+                            <th>Reason</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="leave-requests-body">
+                        <!-- Dynamic content will go here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+
+    <div class="dashboard-grid">
+        <!-- User Details Card -->
+        <div class="dashboard-card">
+            <div class="card-header">
+                <h2 class="card-title">Your Profile</h2>
+            </div>
+            
+            <table class="user-details-table">
+                <tr>
+                    <th>Username</th>
+                    <td>{{ user.username }}</td>
+                </tr>
+                <tr>
+                    <th>Email</th>
+                    <td>{{ user.email }}</td>
+                </tr>
+                <tr>
+                    <th>Full Name</th>
+                    <td>{{ user.first_name }} {{ user.last_name }}</td>
+                </tr>
+                <tr>
+                    <th>Phone Number</th>
+                    <td>{{ user.phone_number|default:"Not provided" }}</td>
+                </tr>
+                <tr>
+                    <th>Tenant</th>
+                    <td>{{ tenant.name }} ({{ tenant.schema_name }})</td>
+                </tr>
+            </table>
+            
+            <div class="action-buttons">
+                <a href="{% url 'core:tenant_profile_edit' %}" class="btn-custom">Edit Profile</a>
+                <a href="{% url 'core:manage_subscription' %}" class="btn-custom">Subscription</a>
+            </div>
+        </div>
+
+        <!-- Notifications Card -->
+        <div class="dashboard-card">
+            <div class="card-header">
+                <h2 class="card-title">Notifications</h2>
+            </div>
+            
+            {% if notifications %}
+                {% for notification in notifications %}
+                <div class="notification-item">
+                    <div class="notification-content">{{ notification.message }}</div>
+                    <div class="notification-time">{{ notification.created_at|date:"M d, H:i" }}</div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="empty-state">No new notifications</div>
+            {% endif %}
+        </div>
+
+        <!-- Recent Activities Card -->
+        <div class="dashboard-card">
+            <div class="card-header">
+                <h2 class="card-title">Recent Activities</h2>
+            </div>
+            
+            {% if activities %}
+                {% for activity in activities %}
+                <div class="activity-item">
+                    <div class="activity-content">{{ activity.action }}</div>
+                    <div class="activity-time">{{ activity.timestamp|date:"M d, H:i" }}</div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="empty-state">No recent activities</div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="dashboard-card tasks-wrapper">
+        <div class="card-header">
+            <h2 class="card-title">Assigned Tasks</h2>
+        </div>
+        <div class="card-body">
+            {% if page_obj %}
+            <table class="compact-table">
+                <thead>
+                    <tr>
+                        <th>Title</th>
+                        <th>Priority</th>
+                        <th>Due Date</th>
+                        <th>Assigned To</th>
+                        <th>Status</th>
+                        <th>Comments</th>
+                        <th>Attachments</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for task in page_obj %}
+                    <tr>
+                        <td>{{ task.title }}</td>
+                        <td>{{ task.priority }}</td>
+                        <td>{{ task.due_date|date:"M d, Y" }}</td>
+                        <td>{{ task.assigned_to.username }}</td>
+                        <td>{{ task.status }}</td>
+                        <td class="comments-cell">{{ task.comments|default:"No comments" }}</td>
+                        <td class="attachments-cell">
+                            {% if task.attachments %}
+                                <a href="{{ task.attachments.url }}" download="{{ task.attachments.name }}" class="attachment-link">
+                                    <i class="fas fa-paperclip"></i> {{ task.attachments.name|cut:"task_attachments/" }}
+                                </a>
+                            {% else %}
+                                No attachments
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
+            <!-- Pagination Controls -->
+        <div class="pagination">
+            <span class="step-links">
+                {% if page_obj.has_previous %}
+                    <a href="?page=1" class="btn-custom">&laquo; First</a>
+                    <a href="?page={{ page_obj.previous_page_number }}" class="btn-custom">Previous</a>
+                {% endif %}
+
+                <span class="current">
+                    Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+                </span>
+
+                {% if page_obj.has_next %}
+                    <a href="?page={{ page_obj.next_page_number }}" class="btn-custom">Next</a>
+                    <a href="?page={{ page_obj.paginator.num_pages }}" class="btn-custom">Last &raquo;</a>
+                {% endif %}
+            </span>
+        </div>
+        {% else %}
+        <div class="empty-state">No tasks assigned</div>
+        {% endif %}
+    </div>
+    </div>
+
+</div>
+
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+    // Function to toggle leave requests visibility
+    function toggleLeaveRequests() {
+        const container = $('#leave-requests-container');
+        container.toggle();
+    }
+    
+    $(document).ready(function() {
+        // Show leave requests when clicking the button
+        $('#manage-leave-btn').click(function(e) {
+            e.preventDefault();
+            const container = $('#leave-requests-container');
+            
+            if (container.is(':hidden')) {
+                $.ajax({
+                    url: "{% url 'core:manage_leave_requests' %}",
+                    method: 'GET',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    success: function(response) {
+                        const tbody = $('#leave-requests-body');
+                        tbody.empty();
+                        response.leave_requests.forEach(function(req) {
+                            tbody.append(`
+                                <tr data-request-id="${req.id}">
+                                    <td>${req.user}</td>
+                                    <td>${req.start_date}</td>
+                                    <td>${req.end_date}</td>
+                                    <td>${req.reason}</td>
+                                    <td>
+                                        <button class="approve-btn" data-request-id="${req.id}">Approve</button>
+                                        <button class="deny-btn" data-request-id="${req.id}">Deny</button>
+                                        <span class="status" id="status-${req.id}"></span>
+                                    </td>
+                                </tr>
+                            `);
+                        });
+                        container.show();
+                    },
+                    error: function(xhr) {
+                        alert('Failed to load leave requests: ' + xhr.status);
+                    }
+                });
+            } else {
+                container.hide();
+            }
+        });
+    
+        // Handle Approve/Deny actions
+        $(document).on('click', '.approve-btn, .deny-btn', function() {
+            const requestId = $(this).data('request-id');
+            const action = $(this).hasClass('approve-btn') ? 'approve' : 'deny';
+            
+            $.ajax({
+                url: "{% url 'core:manage_leave_requests' %}",
+                method: 'POST',
+                data: {
+                    'request_id': requestId,
+                    'action': action,
+                    'csrfmiddlewaretoken': $('input[name=csrfmiddlewaretoken]').val()
+                },
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                success: function(response) {
+                    if (response.success) {
+                        const statusSpan = $(`#status-${requestId}`);
+                        statusSpan.text(response.status);
+                        $(`tr[data-request-id="${requestId}"]`).fadeOut(500, function() {
+                            $(this).remove();
+                        });
+                    }
+                },
+                error: function(xhr) {
+                    alert('Failed to update status: ' + xhr.status);
+                }
+            });
+        });
+    
+        // Close container when clicking outside
+        $(document).click(function(e) {
+            const container = $('#leave-requests-container');
+            const button = $('#manage-leave-btn');
+            
+            // If click is outside the container and not on the button, hide the container
+            if (!container.is(e.target) && !container.has(e.target).length && 
+                !button.is(e.target) && !button.has(e.target).length) {
+                container.hide();
+            }
+        });
+    });
+    </script>
+
+
+{% endblock %}

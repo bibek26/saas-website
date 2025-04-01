@@ -1,0 +1,80 @@
+{% comment %} {% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Manage Subscription{% endblock %}
+
+{% block content %}
+<h2>Messages</h2>
+<form method="post">
+    {% csrf_token %}
+    <select name="recipient">
+        {% for user in users %}
+        <option value="{{ user.id }}">{{ user.username }}</option>
+        {% endfor %}
+    </select>
+    <textarea name="content"></textarea>
+    <button type="submit">Send</button>
+</form>
+<ul>
+    {% for message in messages %}
+    <li>{{ message.sender }} to {{ message.recipient }}: {{ message.content }} ({{ message.timestamp }})</li>
+    {% endfor %}
+</ul>
+{%endblock%} {% endcomment %}
+
+
+<div class="message-list">
+    {% for message in messages %}
+    <div class="message {% if message.sender == current_user %}message-right{% else %}message-left{% endif %}">
+        <div class="message-content">
+            {{ message.content }}
+        </div>
+        <div class="message-time">
+            {{ message.timestamp|date:"M d, H:i" }}
+        </div>
+    </div>
+    {% empty %}
+    <div class="no-messages">No messages yet.</div>
+    {% endfor %}
+</div>
+
+<style>
+.message-list {
+    max-height: 300px;
+    overflow-y: auto;
+    padding: 10px;
+}
+.message {
+    margin-bottom: 10px;
+    display: flex;
+    flex-direction: column;
+}
+.message-left {
+    align-items: flex-start;
+}
+.message-right {
+    align-items: flex-end;
+}
+.message-content {
+    padding: 10px;
+    border-radius: 10px;
+    max-width: 70%;
+    word-wrap: break-word;
+}
+.message-left .message-content {
+    background-color: #e9ecef;
+}
+.message-right .message-content {
+    background-color: #007bff;
+    color: white;
+}
+.message-time {
+    font-size: 12px;
+    color: #777;
+    margin-top: 5px;
+}
+.no-messages {
+    text-align: center;
+    color: #777;
+}
+</style>

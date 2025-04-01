@@ -1,0 +1,43 @@
+<!-- templates/core/admin_dashboard.html -->
+{% extends 'core/base.html' %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin Dashboard</title>
+    <style>
+        table, th, td {
+            border: 1px solid black;
+            border-collapse: collapse;
+            padding: 10px;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+    </style>
+</head>
+<body>
+    {% block content %}
+    <h1>Admin Dashboard</h1>
+    <table>
+        <tr>
+            <th>Tenant Name</th>
+            <th>User Count</th>
+            <th>Plan</th>
+            <th>Start Date</th>
+            <th>End Date</th>
+        </tr>
+        {% for data in tenant_data %}
+        <tr>
+            <td>{{ data.tenant.name }}</td>
+            <td>{{ data.user_count }}</td>
+            <td>{{ data.subscription.plan|default:"None" }}</td>
+            <td>{{ data.subscription.start_date|default:"N/A" }}</td>
+            <td>{{ data.subscription.end_date|default:"N/A" }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+    <p><a href="{% url 'core:admin_home' %}">Back to Home</a></p>
+</body>
+{%endblock%}
+</html>

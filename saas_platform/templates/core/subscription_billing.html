@@ -1,0 +1,36 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Subscription & Billing{% endblock %}
+
+{% block content %}
+    <h1 class="mb-4">Subscription & Billing</h1>
+    <h3>Current Plan: {{ subscription.plan|title }}</h3>
+    <p>Start Date: {{ subscription.start_date }}</p>
+    <p>End Date: {{ subscription.end_date }}</p>
+    <h4>Usage Details</h4>
+    <p>Number of Users: {{ user_count }}</p>
+    <a href="{% url 'core:manage_subscription' %}" class="btn btn-custom mb-3">Change Plan</a>
+    <a href="{% url 'core:update_billing' %}" class="btn btn-custom mb-3">Update Billing Info</a>
+    <h4>Payment History</h4>
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Amount</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for payment in payment_history %}
+            <tr>
+                <td>{{ payment.date }}</td>
+                <td>${{ payment.amount }}</td>
+                <td>{{ payment.status|title }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <h4>Billing Info</h4>
+    <p>Card: {{ billing_info.card_number|default:"Not set" }}</p>
+{% endblock %}

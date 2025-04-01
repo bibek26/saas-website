@@ -1,0 +1,10 @@
+{% extends 'core/base.html' %}
+{% block content %}
+<h2>Help</h2>
+{% for article in articles %}
+    <h3>{{ article.title }}</h3>
+    <p>{{ article.content }}</p>
+{% endfor %}
+<a href="{% url 'core:support_tickets' %}">View Tickets</a> | <a href="{% url 'core:create_ticket' %}">Create Ticket</a>
+<p>Contact: <a href="mailto:support@example.com">support@example.com</a></p>
+{% endblock %}

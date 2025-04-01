@@ -1,0 +1,254 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}User Management{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Modal Styles */
+    .modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0,0,0,0.5); /* Semi-transparent background */
+    }
+    .modal-content {
+        background-color: #fff;
+        margin: 10% auto;
+        padding: 20px;
+        border: 1px solid #888;
+        width: 80%;
+        max-width: 600px;
+        border-radius: 5px;
+        position: relative;
+    }
+    .close-modal {
+        position: absolute;
+        top: 10px;
+        right: 15px;
+        font-size: 24px;
+        cursor: pointer;
+        color: #333;
+    }
+    .task-form-container {
+        margin-top: 20px;
+    }
+
+    .modal-title {
+        font-size: 24px;
+        font-weight: bold;
+        color: #333;
+        margin-bottom: 20px;
+        text-align: center;
+    }
+    .message-list-container {
+        max-height: 400px;
+        overflow-y: auto;
+        margin-bottom: 20px;
+    }
+    .message-form {
+        display: flex;
+        align-items: center;
+    }
+    .message-input-group {
+        display: flex;
+        width: 100%;
+    }
+    .form-control {
+        flex: 1;
+        padding: 8px;
+        border: 1px solid #ddd;
+        border-radius: 4px 0 0 4px;
+        margin-right: -1px;
+    }
+    .message-form .btn-custom {
+        border-radius: 0 4px 4px 0;
+        padding: 8px 15px;
+    }
+
+</style>
+{%endblock%}
+{% block content %}
+    <h1 class="mb-4">User Management</h1>
+    <a href="{% url 'core:add_user' %}" class="btn btn-custom mb-3">Add User</a>
+    <a href="{% url 'core:export_users' %}">Export Users as CSV</a>
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Username</th>
+                <th>Email</th>
+                <th>Role</th>
+                <th>Status</th>
+                <th>Tasks and Chat</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for user in users %}
+            <tr>
+                <td>{{ user.username }}</td>
+                <td>{{ user.email }}</td>
+                <td>{{ user.role|title }}</td>
+                <td>{{ user.is_active|yesno:"Active,Inactive" }}</td>
+                <td class="task-chat-icons">
+                    <a href="#" class="btn btn-icon assign-task-btn" title="Assign Tasks" data-user-id="{{ user.id }}">
+                        <i class="fas fa-tasks"></i>
+                    </a>
+                    <a href="#" class="btn btn-icon message-btn" title="Message" data-user-id="{{ user.id }}">
+                        <i class="fas fa-envelope"></i>
+                    </a>
+                </td>
+                <td>
+                    {% if user.is_active %}
+                        <a href="{% url 'core:deactivate_user' user.id %}" class="btn btn-sm btn-danger">Deactivate</a>
+                    {% else %}
+                        <a href="{% url 'core:activate_user' user.id %}" class="btn btn-sm btn-success">Activate</a>
+                    {% endif %}
+                    <a href="{% url 'core:edit_user' user.id %}" class="btn btn-custom btn-sm">Edit</a>
+                    <a href="{% url 'core:delete_user' user.id %}" class="btn btn-danger btn-sm" onclick="return confirm('Are you sure?')">Delete</a>
+                </td>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <!-- Modal for Task Form -->
+    <div id="task-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <span class="close-modal" onclick="$('#task-modal').hide();">&times;</span>
+            <div id="task-form-container"></div>
+        </div>
+    </div>
+
+    <!-- Message Modal -->
+    <div id="message-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <span class="close-modal" onclick="$('#message-modal').hide();">×</span>
+            <h3 id="message-modal-title" class="modal-title"></h3>
+            <div id="message-list-container" class="message-list-container"></div>
+            <form id="send-message-form" class="message-form" method="post">
+                {% csrf_token %}
+                <div class="message-input-group">
+                    <input type="text" id="message-input" name="content" class="form-control" placeholder="Type a message..." required>
+                    <button type="submit" class="btn btn-custom">Send</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            // Show task form in modal on click
+            $('.assign-task-btn').click(function(e) {
+                e.preventDefault();
+                const userId = $(this).data('user-id');
+                const modal = $('#task-modal');
+                const formContainer = $('#task-form-container');
+        
+                $.ajax({
+                    url: "{% url 'core:assign_task' 999 %}".replace('999', userId),
+                    method: 'GET',
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                    success: function(response) {
+                        formContainer.html(response.form_html);
+                        modal.show();
+                    },
+                    error: function(xhr) {
+                        console.log('Error:', xhr.status, xhr.responseText);
+                        alert('Failed to load task form: ' + xhr.status);
+                    }
+                });
+            });
+        
+            // Submit task form via AJAX
+            $(document).on('submit', '.task-form', function(e) {
+                e.preventDefault();
+                const userId = $(this).data('user-id');
+                const formData = $(this).serialize();
+        
+                $.ajax({
+                    url: "{% url 'core:assign_task' 999 %}".replace('999', userId),
+                    method: 'POST',
+                    data: formData,
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                    success: function(response) {
+                        if (response.success) {
+                            alert('Task assigned successfully: ' + response.task.title);
+                            $('#task-modal').hide();  // Hide modal after success
+                        }
+                    },
+                    error: function(xhr) {
+                        console.log('Error:', xhr.status, xhr.responseText);
+                        alert('Failed to assign task: ' + xhr.status);
+                    }
+                });
+            });
+        
+        // Message Modal Logic
+        $('.message-btn').click(function(e) {
+            e.preventDefault();
+            const userId = $(this).data('user-id');
+            const modal = $('#message-modal');
+            const title = $(`tr td:contains("${$(this).closest('tr').find('td:first').text()}")`).text();
+            const listContainer = $('#message-list-container');
+
+            $('#message-modal-title').text(`Messages from ${title}`);
+            $('#send-message-form').data('user-id', userId);
+
+            $.ajax({
+                url: "{% url 'core:view_user_messages' 999 %}".replace('999', userId),
+                method: 'GET',
+                headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                success: function(response) {
+                    listContainer.html(response.messages_html);
+                    modal.show();
+                    listContainer.scrollTop(listContainer[0].scrollHeight); // Scroll to bottom
+                },
+                error: function(xhr) {
+                    console.log('Error:', xhr.status, xhr.responseText);
+                    alert('Failed to load messages: ' + xhr.status);
+                }
+            });
+        });
+
+        $('#send-message-form').submit(function(e) {
+            e.preventDefault();
+            const userId = $(this).data('user-id');
+            const formData = $(this).serialize();
+
+            $.ajax({
+                url: "{% url 'core:view_user_messages' 999 %}".replace('999', userId),
+                method: 'POST',
+                data: formData,
+                headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                success: function(response) {
+                    if (response.success) {
+                        $('#message-list-container').html(response.messages_html);
+                        $('#message-input').val(''); // Clear input
+                        $('#message-list-container').scrollTop($('#message-list-container')[0].scrollHeight); // Scroll to bottom
+                    } else {
+                        alert('Failed to send message: ' + JSON.stringify(response.errors));
+                    }
+                },
+                error: function(xhr) {
+                    console.log('Error:', xhr.status, xhr.responseText);
+                    alert('Failed to send message: ' + xhr.status);
+                }
+            });
+        });
+
+        $(document).click(function(e) {
+            const taskModal = $('#task-modal');
+            const messageModal = $('#message-modal');
+            if (!$(e.target).closest('.modal-content, .assign-task-btn, .message-btn').length) {
+                taskModal.hide();
+                messageModal.hide();
+            }
+        });
+    });
+    </script>
+{% endblock %}
