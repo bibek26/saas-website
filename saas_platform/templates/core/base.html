@@ -9,23 +9,7 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="{% static 'css/style.css' %}" rel="stylesheet">
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    {% comment %} <style>
-        :root {
-            --primary-color: {% if customization %}{{ customization.primary_color }}{% else %}#007bff{% endif %};
-            --secondary-color: {% if customization %}{{ customization.secondary_color }}{% else %}#6c757d{% endif %};
-        }
-        .btn-custom {
-            background-color: var(--primary-color);
-            color: white;
-            border: none;
-        }
-        .btn-custom:hover {
-            background-color: var(--secondary-color); /* Adjusted for better contrast */
-        }
-        .company-name {
-            color: var(--primary-color);
-        }
-    </style> {% endcomment %}
+
     {% block extra_css %}{% endblock %}
 </head>
 <body>

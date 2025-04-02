@@ -6,7 +6,8 @@
 
 {% block content %}
     <h1 class="mb-4">Admin Dashboard</h1>
-    <p><a href="{% url 'core:admin_dashboard' %}">View Dashboard</a></p>
+    <p><a class="btn btn-custom mt-3" href="{% url 'core:admin_dashboard' %}">View Dashboard</a>
+    <a href="{% url 'admin:index' %}" class="btn btn-custom mt-3">Manage Users</a></p>
     <table class="table table-striped">
         <thead>
             <tr>
@@ -27,5 +28,4 @@
             {% endfor %}
         </tbody>
     </table>
-    <a href="{% url 'admin:index' %}" class="btn btn-custom mt-3">Manage Users</a>
 {% endblock %}

@@ -176,7 +176,7 @@ class MessageForm(forms.ModelForm):
 class ProjectForm(forms.ModelForm):
     members = forms.ModelMultipleChoiceField(
         queryset=CustomUser.objects.all(),
-        widget=forms.CheckboxSelectMultiple,
+        widget=forms.SelectMultiple,
         required=False
     )
 

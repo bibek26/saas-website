@@ -1,43 +1,155 @@
-<!-- templates/core/admin_dashboard.html -->
 {% extends 'core/base.html' %}
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Admin Dashboard</title>
-    <style>
-        table, th, td {
-            border: 1px solid black;
-            border-collapse: collapse;
-            padding: 10px;
+{% load static %}
+
+{% block title %}Admin Dashboard{% endblock %}
+
+{% block extra_css %}
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+<style>
+    /* Custom styles for a cool admin dashboard */
+    .dashboard-container {
+        max-width: 1200px;
+        margin: auto;
+        padding: 1.4rem;
+        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        border-radius: 20px;
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+    }
+    .dashboard-header {
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+    .dashboard-header h1 {
+        font-size: 2.5rem;
+        color: #2c3e50;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+    .dashboard-card {
+        background: #fff;
+        border-radius: 15px;
+        padding: 1.5rem;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    }
+    .table-responsive {
+        border-radius: 10px;
+        overflow: hidden;
+    }
+    .cool-table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+        background: #fff;
+    }
+    .cool-table th {
+        background: linear-gradient(90deg, #3498db,rgb(74, 134, 173));
+        color: #fff;
+        font-weight: 600;
+        text-transform: uppercase;
+        padding: 1rem;
+        font-size: 0.9rem;
+        border: none;
+    }
+    .cool-table td {
+        padding: 1rem;
+        border-bottom: 1px solid #e9ecef;
+        color:rgb(71, 95, 119);
+        font-size: 0.95rem;
+        transition: background 0.3s ease;
+    }
+    .cool-table tr:hover td {
+        background: #f1f8ff;
+    }
+    .cool-table tr:last-child td {
+        border-bottom: none;
+    }
+    .plan-badge {
+        display: inline-block;
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 500;
+        color: #fff;
+    }
+    .plan-badge.Basic { background: #2ecc71; }
+    .plan-badge.pro { background: #e67e22; }
+    .plan-badge.enterprise { background: #8e44ad; }
+    .plan-badge.none { background: #95a5a6; }
+    .action-link {
+        display: inline-block;
+        margin-top: 1.5rem;
+        padding: 0.75rem 1.5rem;
+        background: #e74c3c;
+        color: #fff;
+        text-decoration: none;
+        border-radius: 8px;
+        font-weight: 500;
+        transition: background 0.3s ease;
+    }
+    .action-link:hover {
+        background: #c0392b;
+        color: #fff;
+    }
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+        .dashboard-container {
+            padding: 1rem;
+            margin: 1rem;
         }
-        th {
-            background-color: #f2f2f2;
+        .dashboard-header h1 {
+            font-size: 1.8rem;
         }
-    </style>
-</head>
-<body>
-    {% block content %}
-    <h1>Admin Dashboard</h1>
-    <table>
-        <tr>
-            <th>Tenant Name</th>
-            <th>User Count</th>
-            <th>Plan</th>
-            <th>Start Date</th>
-            <th>End Date</th>
-        </tr>
-        {% for data in tenant_data %}
-        <tr>
-            <td>{{ data.tenant.name }}</td>
-            <td>{{ data.user_count }}</td>
-            <td>{{ data.subscription.plan|default:"None" }}</td>
-            <td>{{ data.subscription.start_date|default:"N/A" }}</td>
-            <td>{{ data.subscription.end_date|default:"N/A" }}</td>
-        </tr>
-        {% endfor %}
-    </table>
-    <p><a href="{% url 'core:admin_home' %}">Back to Home</a></p>
-</body>
-{%endblock%}
-</html>
+        .cool-table th, .cool-table td {
+            padding: 0.75rem;
+            font-size: 0.85rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <div class="dashboard-header">
+        <h1>Admin Dashboard</h1>
+    </div>
+
+    <div class="dashboard-card">
+        <div class="table-responsive">
+            <table class="cool-table">
+                <thead>
+                    <tr>
+                        <th>Tenant Name</th>
+                        <th>User Count</th>
+                        <th>Plan</th>
+                        <th>Start Date</th>
+                        <th>End Date</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for data in tenant_data %}
+                    <tr>
+                        <td>{{ data.tenant.name }}</td>
+                        <td>{{ data.user_count }}</td>
+                        <td>
+                            <span class="plan-badge {% if data.subscription.plan == 'basic' %}Basic{% elif data.subscription.plan == 'pro' %}Pro{% elif data.subscription.plan == 'enterprise' %}Enterprise{% else %}none{% endif %}">
+                                {{ data.subscription.plan|default:"None" }}
+                            </span>
+                        </td>
+                        <td>{{ data.subscription.start_date|date:"M d, Y"|default:"N/A" }}</td>
+                        <td>{{ data.subscription.end_date|date:"M d, Y"|default:"N/A" }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="text-center py-3">No tenant data available</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <div class="text-center">
+            <a href="{% url 'core:admin_home' %}" class="action-link">Back to Home</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

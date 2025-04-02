@@ -71,7 +71,7 @@ SHARED_APPS = [
 ]
 
 TENANT_APPS = [
-    'core.apps.CoreConfig',  # Tenant-specific models like Task, TaskAttachment
+    #'core.apps.CoreConfig',  # Tenant-specific models like Task, TaskAttachment
     'django.contrib.auth',   # Tenant-specific users
     'django.contrib.contenttypes',
     'django.contrib.sessions',

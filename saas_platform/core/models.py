@@ -92,7 +92,7 @@ class Notification(models.Model):
     timestamp = models.DateTimeField(default=timezone.now)
     
 class Subscription(models.Model):
-    tenant = models.OneToOneField('core.Tenant', on_delete=models.CASCADE)
+    tenant = models.OneToOneField('core.Tenant', on_delete=models.CASCADE, related_name='subscription')
     plan = models.CharField(max_length=50, choices=[('basic', 'Basic'), ('pro', 'Pro')])
     start_date = models.DateField()
     end_date = models.DateField()
@@ -187,10 +187,11 @@ class Project(models.Model):
     def completion_percentage(self):
         tasks = self.task_set.all()
         if not tasks.exists():
-            return 0
+            return 0.00
         completed_tasks = tasks.filter(status='Completed').count()
         total_tasks = tasks.count()
-        return (completed_tasks / total_tasks * 100) if total_tasks > 0 else 0
+        percentage = (completed_tasks / total_tasks * 100) if total_tasks > 0 else 0
+        return round(percentage, 2)
 
     
 class Activity(models.Model):

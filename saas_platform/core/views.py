@@ -85,7 +85,7 @@ def tenant_home(request):
             page_number = request.GET.get('page')  # Get the page number from query params
             page_obj = paginator.get_page(page_number)
             
-            projects = Project.objects.filter(members=request.user).prefetch_related('members')
+            projects = Project.objects.prefetch_related('members')
             projects_paginator = Paginator(projects, 10)
             projects_page_number = request.GET.get('projects_page')
             projects_page_obj = projects_paginator.get_page(projects_page_number)
@@ -200,26 +200,32 @@ def tenant_profile_edit(request):
     with schema_context('public'):
         tenant = Tenant.objects.get(schema_name=request.user.tenant_schema)
         customization, _ = TenantCustomization.objects.get_or_create(tenant=tenant)
-        print(f"Tenant logo: {tenant.logo}, URL: {tenant.logo.url if tenant.logo else 'None'}")
-    if request.method == 'POST':
-        user_form = UserProfileForm(request.POST, instance=request.user)
-        tenant_form = TenantProfileForm(request.POST, request.FILES, instance=tenant)
-        custom_form = TenantCustomizationForm(request.POST, instance=customization)
-        if user_form.is_valid() and tenant_form.is_valid():
-            user_form.save()
-            tenant_form.save()
-            custom_form.save()
-            messages.success(request, "Profile and customization updated successfully!")
-            return redirect('core:tenant_home')
-    else:
-        user_form = UserProfileForm(instance=request.user)
-        tenant_form = TenantProfileForm(instance=tenant)
-        custom_form = TenantCustomizationForm(instance=customization)
-    return render(request, 'core/tenant_profile_edit.html', {
-        'user_form': user_form,
-        'tenant_form': tenant_form,
-        'custom_form': custom_form,
-    })
+        if request.method == 'POST':
+
+            user_form = UserProfileForm(request.POST, instance=request.user)
+            tenant_form = TenantProfileForm(request.POST, request.FILES, instance=tenant)
+            custom_form = TenantCustomizationForm(request.POST, instance=customization)
+
+            if user_form.is_valid() and tenant_form.is_valid() and custom_form.is_valid():
+                print("All forms are valid. Saving...")
+                user_form.save()
+                tenant_form.save()
+                custom_form.save()
+
+                messages.success(request, "Profile and customization updated successfully!")
+                return redirect('core:tenant_home')
+
+        else:
+            user_form = UserProfileForm(instance=request.user)
+            tenant_form = TenantProfileForm(instance=tenant)
+            custom_form = TenantCustomizationForm(instance=customization)
+
+        return render(request, 'core/tenant_profile_edit.html', {
+            'user_form': user_form,
+            'tenant_form': tenant_form,
+            'custom_form': custom_form,
+            'tenant': tenant
+        })
     
 @login_required
 def change_password(request):
@@ -253,16 +259,20 @@ def admin_dashboard(request):
 
 @login_required
 def subscription_billing(request):
+    from django.db import connection
     with schema_context('public'):
         tenant = Tenant.objects.get(schema_name=request.user.tenant_schema)
         subscription = Subscription.objects.get(tenant=tenant)
-        payment_history = PaymentHistory.objects.filter(tenant=tenant)
+        payment_history = PaymentHistory.objects.filter(tenant=tenant).order_by('-date')
+        print(f"Schema: {connection.schema_name}, Payment History: {list(payment_history)}")
         billing_info, _ = BillingInfo.objects.get_or_create(tenant=tenant)
+    with schema_context(request.user.tenant_schema):
+        user_count = CustomUser.objects.count()
     return render(request, 'core/subscription_billing.html', {
         'subscription': subscription,
         'payment_history': payment_history,
         'billing_info': billing_info,
-        'user_count': CustomUser.objects.count()
+        'user_count': user_count
     })
 
 @login_required
@@ -310,35 +320,35 @@ def manage_subscription(request):
         # Debug print to verify data
         print(f"Billing Info: {billing_info.card_number}, {billing_info.expiry_date}, {billing_info.cvv}")
 
-    if request.method == 'POST':
-        if 'plan' in request.POST and 'confirm' not in request.POST:
-            # Step 1: Plan selected, show billing details
-            selected_plan = request.POST.get('plan')
-            plan_duration = '1 Month' if selected_plan == 'basic' else '6 Months'
-            plan_cost = '10.00' if selected_plan == 'basic' else '50.00'
-            return render(request, 'core/manage_subscription.html', {
-                'subscription': subscription,
-                'billing_info': billing_info,
-                'selected_plan': selected_plan,
-                'plan_duration': plan_duration,
-                'plan_cost': plan_cost
-            })
-        elif 'confirm' in request.POST:
-            # Step 2: Billing confirmed, update subscription
-            plan = request.POST.get('plan')
-            duration = 1 if plan == 'basic' else 6
-            subscription.plan = plan
-            subscription.start_date = date.today()
-            subscription.end_date = date.today() + relativedelta(months=duration)
-            subscription.save()
-            # Simulate payment
-            PaymentHistory.objects.create(tenant=tenant, amount=10.00 if plan == 'basic' else 50.00, status='success')
-            return redirect('core:subscription_billing')
+        if request.method == 'POST':
+            if 'plan' in request.POST and 'confirm' not in request.POST:
+                # Step 1: Plan selected, show billing details
+                selected_plan = request.POST.get('plan')
+                plan_duration = '1 Month' if selected_plan == 'basic' else '6 Months'
+                plan_cost = '10.00' if selected_plan == 'basic' else '50.00'
+                return render(request, 'core/manage_subscription.html', {
+                    'subscription': subscription,
+                    'billing_info': billing_info,
+                    'selected_plan': selected_plan,
+                    'plan_duration': plan_duration,
+                    'plan_cost': plan_cost
+                })
+            elif 'confirm' in request.POST:
+                # Step 2: Billing confirmed, update subscription
+                plan = request.POST.get('plan')
+                duration = 1 if plan == 'basic' else 6
+                subscription.plan = plan
+                subscription.start_date = date.today()
+                subscription.end_date = date.today() + relativedelta(months=duration)
+                subscription.save()
+                # Simulate payment
+                PaymentHistory.objects.create(tenant=tenant, amount=10.00 if plan == 'basic' else 50.00, status='success')
+                return redirect('core:subscription_billing')
 
-    return render(request, 'core/manage_subscription.html', {
-        'subscription': subscription,
-        'billing_info': billing_info
-    })
+        return render(request, 'core/manage_subscription.html', {
+            'subscription': subscription,
+            'billing_info': billing_info
+        })
 
 
 @login_required
@@ -837,7 +847,7 @@ def create_project(request):
             messages.success(request, f"Project '{project.name}' created successfully.")
             ActivityLog.objects.create(action=f"New Project '{project.name}' was created.")
             
-            return redirect('core:user_management')  # Or a project management page
+            return redirect('core:tenant_home')  # Or a project management page
     else:
         form = ProjectForm()
     return render(request, 'ad/create_project.html', {'form': form})
