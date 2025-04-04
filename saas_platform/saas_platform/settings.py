@@ -19,17 +19,22 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-^xnbgnj*4x!b_zv#kvc!d49_dvwemnw=!9ay@850y9harw^rte'
+# SECRET_KEY = 'django-insecure-^xnbgnj*4x!b_zv#kvc!d49_dvwemnw=!9ay@850y9harw^rte'
+SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', 'django-insecure-^xnbgnj*4x!b_zv#kvc!d49_dvwemnw=!9ay@850y9harw^rte')
+
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+# DEBUG = True
+DEBUG = os.getenv('DEBUG', 'True') == 'True'
 
-ALLOWED_HOSTS = [
-    '192.168.1.31',  # Your local IP
-    'acme.local',    # Existing tenant domain
-    'localhost',     # For local testing
-    '*.local',       # Wildcard for tenant subdomains
-]
+
+# ALLOWED_HOSTS = [
+#     '192.168.1.31',  # Your local IP
+#     'acme.local',    # Existing tenant domain
+#     'localhost',     # For local testing
+#     '*.local',       # Wildcard for tenant subdomains
+# ]
+ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', '192.168.1.31,acme.local,localhost,*.local').split(',')
 
 
 # Application definition
@@ -133,14 +138,25 @@ WSGI_APPLICATION = 'saas_platform.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 AUTH_USER_MODEL = 'core.CustomUser'
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django_tenants.postgresql_backend',
+#         'NAME': 'saas_db',
+#         'USER': 'postgres',
+#         'PASSWORD': 'root',
+#         'HOST': 'localhost',
+#         'PORT': '5432',
+#     }
+# }
+# Database
 DATABASES = {
     'default': {
-        'ENGINE': 'django_tenants.postgresql_backend',
-        'NAME': 'saas_db',
-        'USER': 'postgres',
-        'PASSWORD': 'root',
-        'HOST': 'localhost',
-        'PORT': '5432',
+        'ENGINE': os.getenv('DB_ENGINE', 'django_tenants.postgresql_backend'),
+        'NAME': os.getenv('DB_NAME', 'saas_db'),
+        'USER': os.getenv('DB_USER', 'postgres'),
+        'PASSWORD': os.getenv('DB_PASSWORD', 'root'),
+        'HOST': os.getenv('DB_HOST', 'localhost'),  # Will be 'db' in Docker Compose
+        'PORT': os.getenv('DB_PORT', '5432'),
     }
 }
 DATABASE_ROUTERS = ['django_tenants.routers.TenantSyncRouter']
@@ -194,3 +210,8 @@ LOGIN_URL = '/login/'
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
+
+# Security settings for production
+SECURE_SSL_REDIRECT = os.getenv('SECURE_SSL_REDIRECT', 'False') == 'True'
+CSRF_COOKIE_SECURE = os.getenv('CSRF_COOKIE_SECURE', 'False') == 'True'
+SESSION_COOKIE_SECURE = os.getenv('SESSION_COOKIE_SECURE', 'False') == 'True'
