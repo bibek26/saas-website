@@ -21,8 +21,8 @@ class Tenant(TenantMixin):
     def save(self, *args, **kwargs):
         if not self.schema_name:
             self.schema_name = f'tenant_{self.name.lower().replace(" ", "_")}'  # Generate a valid schema_name
-        if self.schema_name == 'public':
-            raise ValueError("Schema name 'public' is reserved.")
+        # if self.schema_name == 'public':
+        #     raise ValueError("Schema name 'public' is reserved.")
         super().save(*args, **kwargs)
         
 class CustomUserManager(BaseUserManager):
