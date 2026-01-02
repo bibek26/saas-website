@@ -25,23 +25,22 @@ def register(request):
         form = CustomUserCreationForm(request.POST)
         if form.is_valid():
             user = form.save()
-            company_name = form.cleaned_data['company_name']  # Assumes form has this field
-            tenant_schema = company_name.lower().replace(' ', '_')  # e.g., "acme"
-            domain_name = f"{tenant_schema}.local"
+            domain_name = form.cleaned_data['domain']
             
-            
-            # with schema_context(tenant_schema):
-            #     user = form.save(commit=False)  # Don't save to DB yet
-            #     user.tenant_schema = tenant_schema  # Set if your User model has this field
-            #     # user.save()
-            #     user.role = 'admin'
-            #     user.is_staff = True
-            #     user.save()
-            #     login(request, user)
             messages.success(request, f"Account created successfully for {user.username}!")
-            # return redirect('core:tenant_home')
-            print(f"entering to {domain_name}")
-            return redirect(f"http://{domain_name}:8000/login")
+
+            scheme = request.scheme
+            port = request.get_port()
+            # If port is standard for scheme, don't include it (though get_port usually returns int)
+            # If default http/80 or https/443, browsers handle it, but let's be safe.
+            # However, for local dev (8000), we need it.
+
+            if (scheme == 'http' and port == 80) or (scheme == 'https' and port == 443):
+                redirect_url = f"{scheme}://{domain_name}/login"
+            else:
+                redirect_url = f"{scheme}://{domain_name}:{port}/login"
+
+            return redirect(redirect_url)
         else:
             # Display form errors as messages
             for field, errors in form.errors.items():
@@ -60,7 +59,6 @@ def admin_home(request):
     if request.user.is_superuser:
         with schema_context('public'):
             tenants = Tenant.objects.all()
-            print(f"Tenants found: {list(tenants)}")
             context['tenants'] = tenants
     return render(request, 'core/admin_home.html', context)
 
@@ -132,7 +130,6 @@ def home(request):
     if request.user.is_superuser:
         with schema_context('public'):
             tenants = Tenant.objects.all()
-            # print(f"Tenants found: {list(tenants)}")
             context['tenants'] = tenants
     else:
         with schema_context('public'):
@@ -184,7 +181,6 @@ def login_view(request):
                     messages.error(request, "Invalid username or password.")
         else:
             # Log and display form errors
-            print(f"Form errors: {form.errors}")
             for field, errors in form.errors.items():
                 for error in errors:
                     messages.error(request, f"{field.capitalize()}: {error}")
@@ -207,7 +203,6 @@ def tenant_profile_edit(request):
             custom_form = TenantCustomizationForm(request.POST, instance=customization)
 
             if user_form.is_valid() and tenant_form.is_valid() and custom_form.is_valid():
-                print("All forms are valid. Saving...")
                 user_form.save()
                 tenant_form.save()
                 custom_form.save()
@@ -264,7 +259,6 @@ def subscription_billing(request):
         tenant = Tenant.objects.get(schema_name=request.user.tenant_schema)
         subscription = Subscription.objects.get(tenant=tenant)
         payment_history = PaymentHistory.objects.filter(tenant=tenant).order_by('-date')
-        print(f"Schema: {connection.schema_name}, Payment History: {list(payment_history)}")
         billing_info, _ = BillingInfo.objects.get_or_create(tenant=tenant)
     with schema_context(request.user.tenant_schema):
         user_count = CustomUser.objects.count()
@@ -290,17 +284,15 @@ def update_billing(request):
             # Handle multiple records: use the first non-empty one or clean up DB
             billing_info = BillingInfo.objects.filter(tenant=tenant).exclude(card_number='').first() or BillingInfo.objects.filter(tenant=tenant).first()
             created = False
-        print(f"Tenant: {tenant.schema_name}, Created: {created}, Billing Info: {billing_info.card_number}, {billing_info.expiry_date}, {billing_info.cvv}")
 
     if request.method == 'POST':
         form = BillingInfoForm(request.POST, instance=billing_info)
         if form.is_valid():
             with schema_context('public'):
                 form.save()
-            print(f"Updated Billing: {billing_info.card_number}, {billing_info.expiry_date}, {billing_info.cvv}")
             return redirect('core:subscription_billing')
-        else:
-            print(f"Form errors: {form.errors}")    
+        # else:
+            # print(f"Form errors: {form.errors}")
     else:
         form = BillingInfoForm(instance=billing_info)
     return render(request, 'core/update_billing.html', {'form': form})
@@ -318,7 +310,6 @@ def manage_subscription(request):
             defaults={'card_number': '', 'expiry_date': '', 'cvv': ''}  # Default empty values
         )
         # Debug print to verify data
-        print(f"Billing Info: {billing_info.card_number}, {billing_info.expiry_date}, {billing_info.cvv}")
 
         if request.method == 'POST':
             if 'plan' in request.POST and 'confirm' not in request.POST:
@@ -523,8 +514,6 @@ def create_ticket(request):
 
 @login_required
 def user_home(request):
-    print(f"View called: user_home for user: {request.user.username}")
-    print(f"Entering user_home for user: {request.user.username}, Schema: {request.user.tenant_schema}")
     tasks = Task.objects.filter(assigned_to=request.user).order_by(request.GET.get('sort', 'due_date'))
     projects = Project.objects.filter(members=request.user)
     activities = Activity.objects.filter(project__members=request.user).order_by('-timestamp')[:10]
@@ -699,7 +688,8 @@ def assign_task(request, user_id):
                 task.assigned_to = user
                 task.save()
                 project = task.project
-                messages.success(request, f"Task '{task.title}' assigned and for {user.username} in {project.name}.")
+                project_name = project.name if project else "No Project"
+                messages.success(request, f"Task '{task.title}' assigned and for {user.username} in {project_name}.")
                 
                 if request.headers.get('x-requested-with') == 'XMLHttpRequest':
                     return JsonResponse({
@@ -772,7 +762,6 @@ def view_user_messages(request, user_id):
                 new_message_html = render_to_string('core/message_item.html', {'message': message, 'current_user': request.user}, request=request)
                 return JsonResponse({'success': True, 'new_messages_html': new_message_html})
             else:
-                print(form.errors)
                 return JsonResponse({'success': False, 'errors': form.errors}, status=400)
     
     messages = Message.objects.filter(
